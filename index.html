@@ -47,7 +47,6 @@
         .info-list { list-style: none; padding: 0; }
         .info-list li { margin-bottom: 8px; }
         
-        /* Nouveau style pour la grille en 3 colonnes */
         .grid-3 { 
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr; 
@@ -61,7 +60,6 @@
             .grid-3 { grid-template-columns: 1fr; } 
         }
         
-        /* Style pour la recherche */
         .search-results { 
             max-height: 150px; 
             overflow-y: auto; 
@@ -89,7 +87,6 @@
             margin-top: 5px; 
         }
         
-        /* Style pour le champ de nom de lieu */
         .location-name-container {
             display: flex;
             align-items: center;
@@ -106,7 +103,6 @@
             font-style: italic;
         }
         
-        /* Styles pour les informations astronomiques */
         .astro-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -196,7 +192,6 @@
             font-size: 20px;
         }
         
-        /* Styles pour le sélecteur de langue */
         .language-selector {
             position: fixed;
             top: 20px;
@@ -273,7 +268,6 @@
             font-size: 18px;
         }
         
-        /* Style pour la direction RTL (arabe) */
         body[dir="rtl"] {
             text-align: right;
         }
@@ -286,12 +280,10 @@
             flex-direction: row-reverse;
         }
         
-        /* Style pour les chiffres - forcer l'affichage des chiffres arabes */
         .number {
             font-family: Arial, sans-serif;
         }
         
-        /* Note d'utilisation en bas de page */
         .usage-note {
             margin-top: 40px;
             padding: 20px;
@@ -357,12 +349,10 @@
             border-right: 4px solid #10b981;
         }
         
-        /* Style pour les chiffres dans les inputs */
         input[type="number"] {
             font-family: Arial, sans-serif;
         }
         
-        /* Style pour centrer le titre principal */
         .page-header {
             text-align: center;
             margin-bottom: 30px;
@@ -373,7 +363,6 @@
             margin: 0;
         }
         
-        /* Style pour les messages d'erreur */
         .error-message {
             color: #dc2626;
             font-size: 14px;
@@ -383,6 +372,44 @@
         
         .input-error {
             border-color: #dc2626 !important;
+        }
+        
+        /* Styles pour la signature responsive */
+        .author-signature {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border-radius: 10px;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .author-signature:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+
+        .author-signature a {
+            color: #2563eb;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .author-signature a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .author-signature > div:first-child {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .author-signature {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -423,16 +450,13 @@
             <div class="card">
                 <h2 id="positionTitle">1. Position</h2>
                 
-                <!-- Champ de recherche par nom -->
                 <label for="locationSearch" id="searchLabel">Rechercher un lieu :</label>
                 <input type="text" id="locationSearch" placeholder="Ex: Paris, France (Appuyez sur Entrée)" autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
                 <div id="searchLoading" class="search-loading">Recherche en cours...</div>
                 
-                <!-- Bouton de localisation automatique -->
                 <button class="location-btn" onclick="getUserLocation()" id="locationBtn">📍 Ma Position Actuelle</button>
                 
-                <!-- Champ pour le nom du lieu (automatique) -->
                 <div class="location-name-container">
                     <input type="text" id="locationName" class="location-name-input" placeholder="Nom du lieu (sera rempli automatiquement)" readonly>
                 </div>
@@ -493,8 +517,65 @@
             </div>
         </div>
         
-        <!-- Note d'utilisation - Cette section sera générée dynamiquement -->
+        <!-- Note d'utilisation -->
         <div class="usage-note" id="usageNote"></div>
+        
+        <!-- Signature de l'auteur en 3 langues -->
+        <div class="author-signature">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: center;">
+                <!-- Français -->
+                <div style="font-family: 'system-ui', sans-serif;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Designer:</span>
+                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #4b5563;">
+                        <span style="font-weight: 600;">📧 Email:</span>
+                        <a href="mailto:Drif7777@gmail.com" style="color: #2563eb; text-decoration: none; margin-left: 5px;">Drif7777@gmail.com</a>
+                    </div>
+                </div>
+                
+                <!-- Arabe -->
+                <div style="font-family: 'system-ui', sans-serif; text-align: center;" dir="rtl">
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 المصمم:</span>
+                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-right: 8px;">ظريف إلياس</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #4b5563;">
+                        <span style="font-weight: 600;">📧 البريد الإلكتروني:</span>
+                        <a href="mailto:Drif7777@gmail.com" style="color: #2563eb; text-decoration: none; margin-right: 5px;">Drif7777@gmail.com</a>
+                    </div>
+                </div>
+                
+                <!-- Version -->
+                <div style="font-family: 'system-ui', sans-serif; text-align: right;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">📌 Version:</span>
+                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">1.0</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #4b5563;">
+                        <span style="font-weight: 600;">🌍 </span>
+                        <span>Altitude-adjusted criteria</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ligne décorative et copyright -->
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(37, 99, 235, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <p style="margin: 0; color: #6b7280; font-size: 0.9em;">
+                    <span>© 2026 - </span>
+                    <span lang="fr">Tous droits réservés</span>
+                    <span lang="en" style="display: none;">All rights reserved</span>
+                    <span lang="ar" style="display: none;" dir="rtl">جميع الحقوق محفوظة</span>
+                </p>
+                <p style="margin: 0; color: #2563eb; font-size: 0.9em;">
+                    <span>🔭 </span>
+                    <span lang="fr">Observation du Croissant Lunaire</span>
+                    <span lang="en" style="display: none;">Lunar Crescent Observation</span>
+                    <span lang="ar" style="display: none;" dir="rtl">رصد الهلال</span>
+                </p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -547,10 +628,10 @@
                 stateLabel: "État :",
                 illuminationLabel: "Illumination :",
                 elongationLabel: "Élongation Soleil-Lune :",
-                crescentLabel: "Premier Croissant :",
+                crescentLabel: "Possibilité d'apercevoir le premier croissant :",
                 searchLoading: "Recherche en cours...",
                 alreadyHidden: "Déjà cachée",
-                nearHorizon: "Très proche de l'horizon (risque de cachée)",
+                nearHorizon: "Très proche de l'horizon",
                 aboveHorizon: "Au-dessus de l'horizon",
                 visibilityResults: {
                     yallop: {
@@ -627,10 +708,10 @@
                 stateLabel: "State:",
                 illuminationLabel: "Illumination:",
                 elongationLabel: "Sun-Moon Elongation:",
-                crescentLabel: "First Crescent:",
+                crescentLabel: "Possibility of seeing the first crescent:",
                 searchLoading: "Searching...",
                 alreadyHidden: "Already hidden",
-                nearHorizon: "Very close to horizon ( possible hidden)",
+                nearHorizon: "Very close to horizon",
                 aboveHorizon: "Above horizon",
                 visibilityResults: {
                     yallop: {
@@ -707,10 +788,10 @@
                 stateLabel: "الحالة:",
                 illuminationLabel: "الإضاءة:",
                 elongationLabel: "الاستطالة الشمس-قمر:",
-                crescentLabel: "الهلال الأول:",
+                crescentLabel: "إمكانية رؤية الهلال:",
                 searchLoading: "جاري البحث...",
                 alreadyHidden: "مخفي بالفعل",
-                nearHorizon: "قريب جداً من الأفق (احتمال الاختفاء)",
+                nearHorizon: "قريب جداً من الأفق ",
                 aboveHorizon: "فوق الأفق",
                 visibilityResults: {
                     yallop: {
@@ -753,11 +834,119 @@
         // Langue courante
         let currentLang = 'fr';
 
-        // Fonction pour convertir les chiffres indiens en chiffres arabes
+        // ============================================
+        // دوال تعديل معايير الرؤية حسب ارتفاع الموقع
+        // ============================================
+
+        function adjustCriterionByElevation(baseValue, elevation, criterion) {
+            if (elevation <= 0) return baseValue;
+            
+            let improvementFactor = 0;
+            
+            switch(criterion) {
+                case 'yallop':
+                    improvementFactor = (elevation / 1000) * 0.5;
+                    return baseValue - improvementFactor;
+                case 'saao':
+                    improvementFactor = (elevation / 1000) * 0.4;
+                    return baseValue + improvementFactor;
+                case 'odeh':
+                    improvementFactor = (elevation / 1000) * 0.6;
+                    return baseValue - improvementFactor;
+                case 'danjon':
+                    improvementFactor = (elevation / 1000) * 0.3;
+                    return baseValue - improvementFactor;
+                default:
+                    return baseValue;
+            }
+        }
+
+        function getAtmosphericTransparency(elevation) {
+            if (elevation <= 0) return 1.0;
+            return 1.0 + (elevation / 3000) * 0.2;
+        }
+
+        function adjustedYallop(elongation, moonAlt, elevation) {
+            const DANGER_LIMIT = 7;
+            const SUCCESS_LIMIT = 10;
+            
+            const adjustedDanger = adjustCriterionByElevation(DANGER_LIMIT, elevation, 'yallop');
+            const adjustedSuccess = adjustCriterionByElevation(SUCCESS_LIMIT, elevation, 'yallop');
+            
+            if (elongation < adjustedDanger || moonAlt < 3) {
+                return ["danger", adjustedDanger, adjustedSuccess];
+            }
+            if (elongation > adjustedSuccess && moonAlt > 5) {
+                return ["success", adjustedDanger, adjustedSuccess];
+            }
+            return ["warning", adjustedDanger, adjustedSuccess];
+        }
+
+        function adjustedSAAO(arcv, daz, q, elevation) {
+            const WARNING_LIMIT = 0;
+            const SUCCESS_LIMIT = 0.5;
+            
+            const adjustedWarning = adjustCriterionByElevation(WARNING_LIMIT, elevation, 'saao');
+            const adjustedSuccess = adjustCriterionByElevation(SUCCESS_LIMIT, elevation, 'saao');
+            
+            if (q > adjustedSuccess) return ["success", adjustedWarning, adjustedSuccess];
+            if (q > adjustedWarning) return ["warning", adjustedWarning, adjustedSuccess];
+            return ["danger", adjustedWarning, adjustedSuccess];
+        }
+
+        function adjustedOdeh(v, w, elevation) {
+            const DANGER_LIMIT = -0.96;
+            const WARNING_LIMIT = 2;
+            const SUCCESS1_LIMIT = 5.65;
+            
+            const adjustedDanger = adjustCriterionByElevation(DANGER_LIMIT, elevation, 'odeh');
+            const adjustedWarning = adjustCriterionByElevation(WARNING_LIMIT, elevation, 'odeh');
+            const adjustedSuccess1 = adjustCriterionByElevation(SUCCESS1_LIMIT, elevation, 'odeh');
+            
+            if (v >= adjustedSuccess1) return ["success2", adjustedDanger, adjustedWarning, adjustedSuccess1];
+            if (v >= adjustedWarning) return ["success1", adjustedDanger, adjustedWarning, adjustedSuccess1];
+            if (v >= adjustedDanger) return ["warning", adjustedDanger, adjustedWarning, adjustedSuccess1];
+            return ["danger", adjustedDanger, adjustedWarning, adjustedSuccess1];
+        }
+
+        function adjustedDanjon(elongation, elevation) {
+            const DANJON_LIMIT = 7;
+            const adjustedLimit = adjustCriterionByElevation(DANJON_LIMIT, elevation, 'danjon');
+            
+            if (elongation < adjustedLimit) {
+                return ["danger", adjustedLimit];
+            }
+            return ["warning", adjustedLimit];
+        }
+
+        function getVisibilityText(status, criterion, lang) {
+            const t = translations[lang].visibilityResults;
+            
+            switch(criterion) {
+                case 'yallop':
+                    if (status === 'danger') return t.yallop.danger;
+                    if (status === 'warning') return t.yallop.warning;
+                    return t.yallop.success;
+                case 'saao':
+                    if (status === 'danger') return t.saao.danger;
+                    if (status === 'warning') return t.saao.warning;
+                    return t.saao.success;
+                case 'odeh':
+                    if (status === 'danger') return t.odeh.danger;
+                    if (status === 'warning') return t.odeh.warning;
+                    if (status === 'success1') return t.odeh.success1;
+                    return t.odeh.success2;
+                case 'danjon':
+                    if (status === 'danger') return t.danjon.danger;
+                    return t.danjon.warning;
+                default:
+                    return "N/A";
+            }
+        }
+
         function convertIndianToArabicNumbers(text) {
             if (!text) return text;
             
-            // Table de conversion des chiffres indiens vers arabes
             const indianToArabic = {
                 '٠': '0', '۰': '0',
                 '١': '1', '۱': '1',
@@ -771,28 +960,22 @@
                 '٩': '9', '۹': '9'
             };
             
-            // Remplacer chaque chiffre indien par son équivalent arabe
             return text.split('').map(char => indianToArabic[char] || char).join('');
         }
 
-        // Fonction pour formater les nombres avec des chiffres arabes
         function formatNumber(number) {
             if (typeof number !== 'number') return number;
-            
-            // Formater le nombre avec 2 décimales max et convertir les chiffres
             const formatted = number.toFixed(2).replace(/\.00$/, '');
             return convertIndianToArabicNumbers(formatted);
         }
 
-        // Fonction pour formater l'heure
         function formatTime(date, lang) {
             if (!date) return 'N/A';
             
-            // Options de formatage selon la langue
             const options = {
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: lang === 'ar' ? false : false // 24h pour toutes les langues
+                hour12: false
             };
             
             let timeString;
@@ -802,11 +985,9 @@
                 timeString = date.toLocaleTimeString('fr-FR', options);
             }
             
-            // Convertir les chiffres indiens en chiffres arabes si nécessaire
             return convertIndianToArabicNumbers(timeString);
         }
 
-        // Fonction pour générer dynamiquement la section d'utilisation
         function updateUsageSection() {
             const t = translations[currentLang];
             const tipPrefix = currentLang === 'en' ? 'Tip:' : currentLang === 'ar' ? 'نصيحة:' : 'Astuce :';
@@ -837,14 +1018,12 @@
             document.getElementById('usageNote').innerHTML = usageHTML;
         }
 
-        // Fonction pour valider les coordonnées
         function isValidCoordinates(lat, lng) {
             return !isNaN(lat) && !isNaN(lng) && 
                    lat >= -90 && lat <= 90 && 
                    lng >= -180 && lng <= 180;
         }
 
-        // Fonction pour afficher/masquer les erreurs de validation
         function showValidationError(inputId, show, message = '') {
             const input = document.getElementById(inputId);
             const errorElement = document.getElementById(inputId + 'Error');
@@ -879,7 +1058,6 @@
         }
 
         async function setPosition(lat, lng) {
-            // Validation des coordonnées
             if (!isValidCoordinates(lat, lng)) {
                 const t = translations[currentLang];
                 document.getElementById('locationName').value = t.invalidPosition;
@@ -888,7 +1066,6 @@
                 return;
             }
             
-            // Masquer les erreurs
             showValidationError('lat', false);
             showValidationError('lng', false);
             
@@ -897,7 +1074,6 @@
             marker.setLatLng([lat, lng]);
             map.panTo([lat, lng]);
             
-            // Récupérer le nom du lieu et l'altitude
             await fetchLocationName(lat, lng);
             await fetchElevation(lat, lng);
             
@@ -908,7 +1084,6 @@
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
             
-            // Validation avant de continuer
             if (!isValidCoordinates(lat, lng)) {
                 const t = translations[currentLang];
                 showValidationError('lat', true, t.latError);
@@ -931,9 +1106,7 @@
             }
         }
 
-        // Fonction pour récupérer le nom du lieu à partir des coordonnées
         async function fetchLocationName(lat, lng) {
-            // Validation des coordonnées
             if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
                 const t = translations[currentLang];
                 document.getElementById('locationName').value = t.invalidPosition;
@@ -941,7 +1114,6 @@
             }
             
             try {
-                // Utiliser la langue courante pour la requête
                 const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
                 const response = await fetch(
                     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12&accept-language=${lang}`
@@ -952,12 +1124,10 @@
                 const data = await response.json();
                 
                 if (data.display_name) {
-                    // Extraire un nom plus lisible (ville, région, pays)
                     let placeName = currentLang === 'en' ? "Unnamed place" : 
                                    currentLang === 'ar' ? "مكان غير مسمى" : 
                                    "Lieu non nommé";
                     
-                    // Essayer différents formats
                     if (data.address) {
                         if (data.address.city) {
                             placeName = data.address.city;
@@ -974,7 +1144,6 @@
                         } else if (data.address.country) {
                             placeName = data.address.country;
                         } else {
-                            // Utiliser les premiers éléments du nom complet
                             const parts = data.display_name.split(',');
                             if (parts.length >= 2) {
                                 placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
@@ -983,7 +1152,6 @@
                             }
                         }
                     } else {
-                        // Utiliser les premiers et derniers éléments du nom complet
                         const parts = data.display_name.split(',');
                         if (parts.length >= 2) {
                             placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
@@ -1008,7 +1176,6 @@
             }
         }
 
-        // Fonction pour obtenir la position de l'utilisateur
         function getUserLocation() {
             if (!navigator.geolocation) {
                 alert(currentLang === 'en' ? "Geolocation is not supported by your browser." :
@@ -1020,7 +1187,6 @@
             const locationBtn = document.querySelector('.location-btn');
             const originalText = locationBtn.textContent;
             
-            // Texte selon la langue
             const loadingText = currentLang === 'en' ? "⏳ Locating..." :
                                currentLang === 'ar' ? "⏳ جاري تحديد الموقع..." :
                                "⏳ Localisation en cours...";
@@ -1028,7 +1194,6 @@
             locationBtn.textContent = loadingText;
             locationBtn.disabled = true;
             
-            // Indiquer que nous cherchons le nom du lieu
             const searchingText = currentLang === 'en' ? "Searching for place name..." :
                                  currentLang === 'ar' ? "جاري البحث عن اسم المكان..." :
                                  "Recherche du nom du lieu...";
@@ -1039,25 +1204,18 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    // Masquer les erreurs précédentes
                     showValidationError('lat', false);
                     showValidationError('lng', false);
                     
-                    // Mettre à jour les champs
                     document.getElementById('lat').value = lat.toFixed(6);
                     document.getElementById('lng').value = lng.toFixed(6);
                     
-                    // Récupérer le nom du lieu et l'altitude
                     await fetchLocationName(lat, lng);
                     await fetchElevation(lat, lng);
                     
-                    // Mettre à jour la position sur la carte
                     setPosition(lat, lng);
-                    
-                    // Recentrer la carte avec un zoom approprié
                     map.setView([lat, lng], 12);
                     
-                    // Rétablir le bouton
                     locationBtn.textContent = originalText;
                     locationBtn.disabled = false;
                 },
@@ -1082,11 +1240,10 @@
                                            currentLang === 'ar' ? "انتهت مهلة تحديد الموقع." :
                                            "Délai de localisation dépassé.";
                             break;
-                        case error.UNKNOWN_ERROR:
+                        default:
                             errorMessage += currentLang === 'en' ? "Unknown error." :
                                            currentLang === 'ar' ? "خطأ غير معروف." :
                                            "Erreur inconnue.";
-                            break;
                     }
                     
                     alert(errorMessage);
@@ -1095,7 +1252,6 @@
                                             "Position non disponible";
                     document.getElementById('locationName').value = notAvailableText;
                     
-                    // Rétablir le bouton
                     locationBtn.textContent = originalText;
                     locationBtn.disabled = false;
                 },
@@ -1128,26 +1284,24 @@
             const altMoon = moon.altitude * 180 / Math.PI;
             const altSun = sun.altitude * 180 / Math.PI;
             const lang = currentLang;
+            const elevation = parseFloat(document.getElementById('ele').value) || 0;
             
             if (criterion === "danjon") {
-                if (e < 7) return [translations[lang].visibilityResults.danjon.danger, "danger"];
-                return [translations[lang].visibilityResults.danjon.warning, "warning"];
+                const [status] = adjustedDanjon(e, elevation);
+                return [getVisibilityText(status, criterion, lang), status];
             }
             
             if (criterion === "yallop") {
-                if (e < 7 || altMoon < 3) return [translations[lang].visibilityResults.yallop.danger, "danger"];
-                if (e > 10 && altMoon > 5) return [translations[lang].visibilityResults.yallop.success, "success"];
-                return [translations[lang].visibilityResults.yallop.warning, "warning"];
+                const [status] = adjustedYallop(e, altMoon, elevation);
+                return [getVisibilityText(status, criterion, lang), status];
             }
-
+            
             if (criterion === "saao") {
-                // SAAO Criterion (South African Astronomical Observatory)
                 const arcv = altMoon - altSun;
                 const daz = Math.abs((moon.azimuth - sun.azimuth) * 180 / Math.PI);
                 const q = arcv - (5.22 - 0.0125 * daz + 0.002 * Math.pow(daz, 2));
-                if (q > 0.5) return [translations[lang].visibilityResults.saao.success, "success"];
-                if (q > 0) return [translations[lang].visibilityResults.saao.warning, "warning"];
-                return [translations[lang].visibilityResults.saao.danger, "danger"];
+                const [status] = adjustedSAAO(arcv, daz, q, elevation);
+                return [getVisibilityText(status, criterion, lang), status];
             }
             
             if (criterion === "odeh") {
@@ -1155,27 +1309,20 @@
                 const w = 2 * sd * illum.fraction;
                 const poly = -0.1018 * Math.pow(w, 3) + 0.7319 * Math.pow(w, 2) - 6.3226 * w + 7.1651;
                 const v = (altMoon - altSun) - poly;
-                if (v >= 5.65) return [translations[lang].visibilityResults.odeh.success2, "success"];
-                if (v >= 2) return [translations[lang].visibilityResults.odeh.success1, "success"];
-                if (v >= -0.96) return [translations[lang].visibilityResults.odeh.warning, "warning"];
-                return [translations[lang].visibilityResults.odeh.danger, "danger"];
+                const [status] = adjustedOdeh(v, w, elevation);
+                return [getVisibilityText(status, criterion, lang), status];
             }
+            
+            return ["N/A", "warning"];
         }
 
-        // Fonction pour estimer quand la Lune sera cachée par le relief
         function estimateMoonBehindTerrain(moonAltitudeDeg) {
-            // Cette fonction est une estimation simple
-            // En réalité, il faudrait avoir le profil d'élévation exact
-            // Pour l'instant, nous retournons une estimation basée sur l'altitude actuelle
             if (moonAltitudeDeg <= 0) {
                 return translations[currentLang].alreadyHidden;
             }
-            
-            // Estimation simple : si la Lune est très basse, elle sera bientôt cachée
             if (moonAltitudeDeg < 5) {
                 return translations[currentLang].nearHorizon;
             }
-            
             return translations[currentLang].aboveHorizon;
         }
 
@@ -1187,39 +1334,31 @@
             const ele = parseInt(document.getElementById('ele').value) || 0;
             const d = new Date(document.getElementById('date').value || Date.now());
             
-            // Validation des coordonnées avant de continuer
             if (!isValidCoordinates(lat, lng)) {
                 return;
             }
             
-            // Récupérer les heures du soleil et de la lune
             const st = SunCalc.getTimes(d, lat, lng);
             const mt = SunCalc.getMoonTimes(d, lat, lng);
-            
-            // Utiliser l'heure exacte du coucher du soleil pour le panorama
             const sunsetTime = st.sunset;
             
-            // Calculer les positions au moment du coucher du soleil
             const sun = SunCalc.getPosition(sunsetTime, lat, lng);
             const moon = SunCalc.getMoonPosition(sunsetTime, lat, lng);
             const illum = SunCalc.getMoonIllumination(sunsetTime);
             const [cresTxt, cresCls] = crescentVisibility(sun, moon, illum, document.getElementById('criterion').value);
 
-            // Calculer les azimuts et altitudes en degrés (nord=0)
-            // Conversion de l'azimut : SunCalc utilise sud=0, nous voulons nord=0
             const sunAzimuthDeg = (sun.azimuth * 180 / Math.PI + 180) % 360;
             const sunAltitudeDeg = sun.altitude * 180 / Math.PI;
             const moonAzimuthDeg = (moon.azimuth * 180 / Math.PI + 180) % 360;
             const moonAltitudeDeg = moon.altitude * 180 / Math.PI;
             
-            // Estimation du moment où la Lune est cachée par le relief
             const moonHiddenStatus = estimateMoonBehindTerrain(moonAltitudeDeg);
+            const elevation = parseFloat(document.getElementById('ele').value) || 0;
+            const atmTransparency = getAtmosphericTransparency(elevation);
             
-            // Mettre à jour les informations astronomiques avec la nouvelle mise en page
             document.getElementById('info').innerHTML = `
                 <h2>${translations[currentLang].infoTitle}</h2>
                 <div class="astro-grid">
-                    <!-- Section Soleil -->
                     <div class="astro-section sun-section">
                         <div class="astro-header">
                             <div class="sun-icon">☀️</div>
@@ -1231,7 +1370,7 @@
                         </div>
                         <div class="astro-info-item">
                             <span class="info-label">${translations[currentLang].azimuthLabel}</span>
-                            <span class="info-value">${formatNumber(sunAzimuthDeg)}° ${currentLang === 'en' ? '(N=0)' : currentLang === 'ar' ? '(الشمال=0)' : '(N=0)'}</span>
+                            <span class="info-value">${formatNumber(sunAzimuthDeg)}° ${currentLang === 'en' ? '' : currentLang === 'ar' ? '' : ''}</span>
                         </div>
                         <div class="astro-info-item">
                             <span class="info-label">${translations[currentLang].altitudeLabel}</span>
@@ -1239,7 +1378,6 @@
                         </div>
                     </div>
                     
-                    <!-- Section Lune -->
                     <div class="astro-section moon-section">
                         <div class="astro-header">
                             <div class="moon-icon">🌙</div>
@@ -1251,7 +1389,7 @@
                         </div>
                         <div class="astro-info-item">
                             <span class="info-label">${translations[currentLang].azimuthLabel}</span>
-                            <span class="info-value">${formatNumber(moonAzimuthDeg)}° ${currentLang === 'en' ? '(N=0)' : currentLang === 'ar' ? '(الشمال=0)' : '(N=0)'}</span>
+                            <span class="info-value">${formatNumber(moonAzimuthDeg)}° ${currentLang === 'en' ? '' : currentLang === 'ar' ? '' : ''}</span>
                         </div>
                         <div class="astro-info-item">
                             <span class="info-label">${translations[currentLang].altitudeLabel}</span>
@@ -1260,7 +1398,6 @@
                     </div>
                 </div>
                 
-                <!-- Section Visibilité -->
                 <div class="visibility-section">
                     <div class="visibility-header">
                         <div class="visibility-icon">🔭</div>
@@ -1269,6 +1406,18 @@
                     <div class="astro-info-item">
                         <span class="info-label">${translations[currentLang].stateLabel}</span>
                         <span class="info-value">${moonHiddenStatus}</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">🏔️ ${currentLang === 'fr' ? 'Altitude:' : currentLang === 'ar' ? 'الارتفاع:' : 'Elevation:'}</span>
+                        <span class="info-value">${formatNumber(elevation)} m</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">🔆 ${currentLang === 'fr' ? 'Transparence:' : currentLang === 'ar' ? 'الشفافية:' : 'Transparency:'}</span>
+                        <span class="info-value">${formatNumber(atmTransparency * 100)}%</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">✨ ${currentLang === 'fr' ? 'Amélioration:' : currentLang === 'ar' ? 'التحسين:' : 'Improvement:'}</span>
+                        <span class="info-value">+${formatNumber((atmTransparency - 1) * 100)}%</span>
                     </div>
                     <div class="astro-info-item">
                         <span class="info-label">${translations[currentLang].illuminationLabel}</span>
@@ -1284,67 +1433,32 @@
                     </div>
                 </div>`;
 
-            // Configurer PeakFinder avec l'heure exacte du coucher du soleil en UTC
             try {
                 panel.loadViewpoint(lat, lng, "Observation");
                 panel.elevationOffset(ele);
                 
-                // 1. Créer une date UTC à partir de l'heure du coucher du soleil
                 const sunsetUTC = new Date(sunsetTime.toISOString());
                 
-                // 2. Transférer l'heure UTC à PeakFinder
                 panel.astro.currentDateTime(
                     sunsetUTC.getUTCFullYear(),
-                    sunsetUTC.getUTCMonth() + 1, // +1 car les mois sont 0-11
+                    sunsetUTC.getUTCMonth() + 1,
                     sunsetUTC.getUTCDate(),
                     sunsetUTC.getUTCHours(),
                     sunsetUTC.getUTCMinutes()
                 );
                 
-                // 3. Calculer l'azimut de la Lune en degrés (0-360) avec le nord comme référence
                 const moonAzimuthDegForPanorama = (moon.azimuth * 180 / Math.PI + 180) % 360;
-                
-                // 4. Centrer le panorama sur l'azimut de la Lune
                 panel.azimut(moonAzimuthDegForPanorama);
-                
-                // 5. Définir un champ de vision approprié
                 panel.fieldofview(60);
                 
-                // 6. Forcer un redessin du panorama
                 if (typeof panel.redraw === 'function') {
                     panel.redraw();
                 }
-                
             } catch (e) { 
                 console.error('Erreur Panorama:', e);
-                try {
-                    const canvas = document.getElementById('pfcanvas');
-                    canvas.width = canvas.width;
-                    
-                    setTimeout(() => {
-                        panel.loadViewpoint(lat, lng, "Observation");
-                        panel.elevationOffset(ele);
-                        
-                        const sunsetUTC = new Date(sunsetTime.toISOString());
-                        panel.astro.currentDateTime(
-                            sunsetUTC.getUTCFullYear(),
-                            sunsetUTC.getUTCMonth() + 1,
-                            sunsetUTC.getUTCDate(),
-                            sunsetUTC.getUTCHours(),
-                            sunsetUTC.getUTCMinutes()
-                        );
-                        
-                        const moonAzimuthDegForPanorama = (moon.azimuth * 180 / Math.PI + 180) % 360;
-                        panel.azimut(moonAzimuthDegForPanorama);
-                        panel.fieldofview(60);
-                    }, 100);
-                } catch (retryError) {
-                    console.error('Erreur lors de la seconde tentative:', retryError);
-                }
             }
         }
 
-        // Fonction de recherche de lieu
         async function searchLocation() {
             const searchInput = document.getElementById('locationSearch');
             const searchTerm = searchInput.value.trim();
@@ -1359,7 +1473,6 @@
             searchResults.innerHTML = '';
             
             try {
-                // Utilisation de l'API Nominatim d'OpenStreetMap avec la langue courante
                 const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
                 const response = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&accept-language=${lang}`
@@ -1391,25 +1504,18 @@
                             const lat = parseFloat(result.lat);
                             const lng = parseFloat(result.lon);
                             
-                            // Masquer les erreurs précédentes
                             showValidationError('lat', false);
                             showValidationError('lng', false);
                             
-                            // Mettre à jour les champs de coordonnées
                             document.getElementById('lat').value = lat.toFixed(6);
                             document.getElementById('lng').value = lng.toFixed(6);
-                            
-                            // Mettre à jour le champ de recherche avec le nom complet
                             searchInput.value = convertIndianToArabicNumbers(result.display_name.split(',')[0]);
                             
-                            // Mettre à jour le champ de nom du lieu
                             const placeName = result.display_name.split(',').slice(0, 2).join(',');
                             document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
                             
-                            // Masquer les résultats
                             searchResults.style.display = 'none';
                             
-                            // Mettre à jour la position sur la carte
                             setPosition(lat, lng);
                         });
                         
@@ -1430,48 +1536,49 @@
             }
         }
 
-        // Fonction pour changer la langue
         function changeLanguage(lang) {
             currentLang = lang;
             
-            // Changer la direction du texte pour l'arabe
             if (lang === 'ar') {
                 document.body.dir = 'rtl';
                 document.body.style.textAlign = 'right';
+                
+                // Afficher/masquer les textes de copyright
+                document.querySelectorAll('p span[lang="fr"], p span[lang="en"], p span[lang="ar"]').forEach(el => {
+                    el.style.display = 'none';
+                });
+                const arCopyright = document.querySelector('p span[lang="ar"]');
+                if (arCopyright) arCopyright.style.display = 'inline';
             } else {
                 document.body.dir = 'ltr';
                 document.body.style.textAlign = 'left';
+                
+                // Afficher/masquer les textes de copyright
+                document.querySelectorAll('p span[lang="fr"], p span[lang="en"], p span[lang="ar"]').forEach(el => {
+                    el.style.display = 'none';
+                });
+                const frCopyright = document.querySelector('p span[lang="fr"]');
+                const enCopyright = document.querySelector('p span[lang="en"]');
+                if (lang === 'fr' && frCopyright) frCopyright.style.display = 'inline';
+                if (lang === 'en' && enCopyright) enCopyright.style.display = 'inline';
             }
             
-            // Mettre à jour les textes
             updateTexts();
-            
-            // Mettre à jour la section d'utilisation
             updateUsageSection();
-            
-            // Mettre à jour le sélecteur de langue (la langue reste affichée sur le bouton)
             updateLangSelector(lang);
             
-            // Mettre à jour le panorama
             if (isReady) {
                 updatePanorama();
             }
             
-            // Fermer le menu déroulant
             document.getElementById('langDropdown').classList.remove('show');
-            
-            // Sauvegarder la préférence de langue
             localStorage.setItem('hilal-lang-preference', lang);
         }
 
-        // Fonction pour mettre à jour tous les textes
         function updateTexts() {
             const t = translations[currentLang];
             
-            // Titre de la page (déjà centré par CSS)
             document.getElementById('pageTitle').textContent = t.pageTitle;
-            
-            // Section Position
             document.getElementById('positionTitle').textContent = t.positionTitle;
             document.getElementById('searchLabel').textContent = t.searchLabel;
             document.getElementById('locationSearch').placeholder = t.searchPlaceholder;
@@ -1481,22 +1588,18 @@
             document.getElementById('lngLabel').textContent = t.lngLabel;
             document.getElementById('eleLabel').textContent = t.eleLabel;
             
-            // Mettre à jour les messages d'erreur
             document.getElementById('latError').textContent = t.latError;
             document.getElementById('lngError').textContent = t.lngError;
             
-            // Section Carte
             document.getElementById('mapTitle').textContent = t.mapTitle;
             document.getElementById('mapBtnStandard').textContent = t.mapBtnStandard;
             document.getElementById('mapBtnRelief').textContent = t.mapBtnRelief;
             document.getElementById('mapBtnSatellite').textContent = t.mapBtnSatellite;
             
-            // Section Date
             document.getElementById('dateTitle').textContent = t.dateTitle;
             document.getElementById('dateLabel').textContent = t.dateLabel;
             document.getElementById('criterionLabel').textContent = t.criterionLabel;
             
-            // Options du critère de visibilité
             const criterionSelect = document.getElementById('criterion');
             Array.from(criterionSelect.options).forEach(option => {
                 const value = option.value;
@@ -1509,12 +1612,27 @@
             document.getElementById('infoTitle').textContent = t.infoTitle;
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
-            
-            // Texte de chargement de recherche
             document.getElementById('searchLoading').textContent = t.searchLoading;
+            
+            // Mettre à jour les titres de la signature
+            const authorFr = document.querySelector('.author-signature div:first-child span:nth-child(2)');
+            const authorAr = document.querySelector('.author-signature div:nth-child(2) span:nth-child(2)');
+            
+            // Les noms restent inchangés (Drif Ilyes / ظريف إلياس)
+            // Mise à jour des textes de projet dans la signature
+            const projectSpan = document.querySelectorAll('.author-signature p:last-child span:last-child');
+            projectSpan.forEach(span => {
+                if (span.hasAttribute('lang')) {
+                    span.style.display = 'none';
+                }
+            });
+            
+            const currentProjectSpan = document.querySelector(`.author-signature p:last-child span[lang="${currentLang}"]`);
+            if (currentProjectSpan) {
+                currentProjectSpan.style.display = 'inline';
+            }
         }
 
-        // Fonction pour mettre à jour le sélecteur de langue
         function updateLangSelector(lang) {
             const langTexts = {
                 'fr': 'Français',
@@ -1528,11 +1646,9 @@
                 'ar': '🇸🇦'
             };
             
-            // Mettre à jour le texte et le drapeau sur le bouton
             document.getElementById('currentLangText').textContent = langTexts[lang];
             document.getElementById('currentLangFlag').textContent = langFlags[lang];
             
-            // Mettre à jour les options actives dans le menu déroulant
             document.querySelectorAll('.lang-option').forEach(option => {
                 option.classList.remove('active');
                 if (option.getAttribute('onclick') === `changeLanguage('${lang}')`) {
@@ -1541,12 +1657,10 @@
             });
         }
 
-        // Fonction pour afficher/masquer le menu déroulant
         function toggleLangDropdown() {
             document.getElementById('langDropdown').classList.toggle('show');
         }
 
-        // Fermer le menu déroulant quand on clique ailleurs
         document.addEventListener('click', function(e) {
             const langDropdown = document.getElementById('langDropdown');
             const langBtn = document.querySelector('.lang-dropdown-btn');
@@ -1556,14 +1670,12 @@
             }
         });
 
-        // Recherche automatique avec la touche Entrée
         document.getElementById('locationSearch').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchLocation();
             }
         });
 
-        // Validation en temps réel des champs de coordonnées
         document.getElementById('lat').addEventListener('change', function() {
             const lat = parseFloat(this.value);
             const t = translations[currentLang];
@@ -1599,16 +1711,13 @@
             initMap();
             initPeakFinder();
             
-            // Vérifier si une préférence de langue est sauvegardée
             const savedLang = localStorage.getItem('hilal-lang-preference');
             if (savedLang && (savedLang === 'fr' || savedLang === 'en' || savedLang === 'ar')) {
                 changeLanguage(savedLang);
             } else {
-                // Langue par défaut: français
                 changeLanguage('fr');
             }
             
-            // Récupérer le nom du lieu pour la position par défaut
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
             await fetchLocationName(lat, lng);
@@ -1616,82 +1725,3 @@
     </script>
 </body>
 </html>
-<!-- Note d'utilisation et signature - Cette section sera générée dynamiquement -->
-<div class="usage-note" id="usageNote"></div>
-
-<!-- Signature de l'auteur en 3 langues -->
-<div class="author-signature" style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); border-radius: 10px; border: 1px solid rgba(37, 99, 235, 0.2); text-align: center;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: center;">
-        <!-- Français -->
-        <div style="font-family: 'system-ui', sans-serif;">
-            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Auteur:</span>
-            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
-        </div>
-        
-        <!-- Arabe -->
-        <div style="font-family: 'system-ui', sans-serif; display: flex; justify-content: center; align-items: center; gap: 8px;" dir="rtl">
-            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 المؤلف:</span>
-            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600;">ظريف إلياس</span>
-        </div>
-        
-        <!-- Version -->
-        <div style="font-family: 'system-ui', sans-serif;">
-            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">📌 Version:</span>
-            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">1.0</span>
-        </div>
-    </div>
-    
-    <!-- Ligne décorative et date -->
-    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(37, 99, 235, 0.3);">
-        <p style="margin: 0; color: #6b7280; font-size: 0.9em;">
-            <span>© 2025 - </span>
-            <span lang="fr">Tous droits réservés</span>
-            <span lang="en" style="display: none;">All rights reserved</span>
-            <span lang="ar" style="display: none;" dir="rtl">جميع الحقوق محفوظة</span>
-        </p>
-    </div>
-</div>
-
-<style>
-/* Styles pour la signature responsive */
-.author-signature {
-    margin-top: 30px;
-    padding: 20px;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
-    border-radius: 10px;
-    border: 1px solid rgba(37, 99, 235, 0.2);
-    text-align: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.author-signature:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
-}
-
-/* Adaptation pour l'arabe */
-body[dir="rtl"] .author-signature .fr-only,
-body[dir="rtl"] .author-signature .en-only {
-    display: none;
-}
-
-body[dir="rtl"] .author-signature .ar-only {
-    display: inline-block;
-}
-
-body[dir="ltr"] .author-signature .ar-only {
-    display: none;
-}
-
-/* Responsive pour mobile */
-@media (max-width: 768px) {
-    .author-signature > div:first-child {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .author-signature {
-        padding: 15px;
-    }
-}
-</style>
