@@ -1616,3 +1616,82 @@
     </script>
 </body>
 </html>
+<!-- Note d'utilisation et signature - Cette section sera générée dynamiquement -->
+<div class="usage-note" id="usageNote"></div>
+
+<!-- Signature de l'auteur en 3 langues -->
+<div class="author-signature" style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); border-radius: 10px; border: 1px solid rgba(37, 99, 235, 0.2); text-align: center;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: center;">
+        <!-- Français -->
+        <div style="font-family: 'system-ui', sans-serif;">
+            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Auteur:</span>
+            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
+        </div>
+        
+        <!-- Arabe -->
+        <div style="font-family: 'system-ui', sans-serif; display: flex; justify-content: center; align-items: center; gap: 8px;" dir="rtl">
+            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 المؤلف:</span>
+            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600;">ظريف إلياس</span>
+        </div>
+        
+        <!-- Version -->
+        <div style="font-family: 'system-ui', sans-serif;">
+            <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">📌 Version:</span>
+            <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">1.0</span>
+        </div>
+    </div>
+    
+    <!-- Ligne décorative et date -->
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(37, 99, 235, 0.3);">
+        <p style="margin: 0; color: #6b7280; font-size: 0.9em;">
+            <span>© 2025 - </span>
+            <span lang="fr">Tous droits réservés</span>
+            <span lang="en" style="display: none;">All rights reserved</span>
+            <span lang="ar" style="display: none;" dir="rtl">جميع الحقوق محفوظة</span>
+        </p>
+    </div>
+</div>
+
+<style>
+/* Styles pour la signature responsive */
+.author-signature {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.author-signature:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+/* Adaptation pour l'arabe */
+body[dir="rtl"] .author-signature .fr-only,
+body[dir="rtl"] .author-signature .en-only {
+    display: none;
+}
+
+body[dir="rtl"] .author-signature .ar-only {
+    display: inline-block;
+}
+
+body[dir="ltr"] .author-signature .ar-only {
+    display: none;
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+    .author-signature > div:first-child {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .author-signature {
+        padding: 15px;
+    }
+}
+</style>
