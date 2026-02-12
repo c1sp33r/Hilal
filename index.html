@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilal – Soleil & Lune Panorama</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <script async src="https://www.peakfinder.com/script/peakfinder.1.0.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f9fafb; color: #1f2937; }
+        .container { max-width: 1200px; margin: auto; padding: 20px; }
+        h1, h2 { color: #2563eb; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        label { font-weight: 600; display: block; margin-bottom: 4px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        
+        .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .btn-group button { margin-bottom: 0; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; cursor: pointer; }
+        .btn-group button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        
+        button.primary { background: #2563eb; color: #fff; border: none; cursor: pointer; transition: background 0.2s; }
+        button.primary:hover { background: #1d4ed8; }
+        
+        button.location-btn { 
+            background: #10b981; 
+            color: #fff; 
+            border: none; 
+            cursor: pointer; 
+            transition: background 0.2s;
+            margin-bottom: 12px;
+        }
+        button.location-btn:hover { background: #0da271; }
+        
+        #map { height: 320px; border-radius: 6px; }
+        .content { position: relative; height: 420px; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
+        #pfcanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #pfcanvasprogress { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); z-index: 10; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .success { color: #16a34a; font-weight: 700; }
+        .warning { color: #ca8a04; font-weight: 700; }
+        .danger { color: #dc2626; font-weight: 700; }
+        .info-list { list-style: none; padding: 0; }
+        .info-list li { margin-bottom: 8px; }
+        
+        /* Nouveau style pour la grille en 3 colonnes */
+        .grid-3 { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 20px; 
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1024px) { 
+            .grid-3 { grid-template-columns: 1fr 1fr; } 
+        }
+        @media (max-width: 768px) { 
+            .grid-3 { grid-template-columns: 1fr; } 
+        }
+        
+        /* Style pour la recherche */
+        .search-results { 
+            max-height: 150px; 
+            overflow-y: auto; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 6px; 
+            margin-top: 5px; 
+            background: white;
+            display: none;
+        }
+        .search-result-item { 
+            padding: 8px 12px; 
+            cursor: pointer; 
+            border-bottom: 1px solid #f3f4f6; 
+        }
+        .search-result-item:hover { 
+            background: #f3f4f6; 
+        }
+        .search-result-item:last-child { 
+            border-bottom: none; 
+        }
+        .search-loading { 
+            display: none; 
+            color: #6b7280; 
+            font-style: italic; 
+            margin-top: 5px; 
+        }
+        
+        /* Style pour le champ de nom de lieu */
+        .location-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .location-name-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #f9fafb;
+            color: #374151;
+            font-style: italic;
+        }
+        
+        /* Styles pour les informations astronomiques */
+        .astro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .astro-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .astro-section {
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .sun-section {
+            background: linear-gradient(135deg, rgba(255, 204, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .moon-section {
+            background: linear-gradient(135deg, rgba(209, 213, 219, 0.1) 0%, rgba(156, 163, 175, 0.1) 100%);
+            border-left: 4px solid #6b7280;
+        }
+        
+        .astro-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .sun-icon {
+            color: #f59e0b;
+            font-size: 24px;
+        }
+        
+        .moon-icon {
+            color: #6b7280;
+            font-size: 24px;
+        }
+        
+        .astro-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        }
+        
+        .astro-info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .visibility-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+            border-left: 4px solid #2563eb;
+        }
+        
+        .visibility-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .visibility-icon {
+            color: #2563eb;
+            font-size: 20px;
+        }
+        
+        /* Styles pour le sélecteur de langue */
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .lang-dropdown {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .lang-dropdown-btn {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            min-width: 140px;
+            justify-content: space-between;
+        }
+        
+        .lang-dropdown-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .lang-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            min-width: 140px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 5px;
+        }
+        
+        .lang-dropdown-content.show {
+            display: block;
+        }
+        
+        .lang-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .lang-option:last-child {
+            border-bottom: none;
+        }
+        
+        .lang-option:hover {
+            background: #f3f4f6;
+        }
+        
+        .lang-option.active {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .lang-flag {
+            font-size: 18px;
+        }
+        
+        /* Style pour la direction RTL (arabe) */
+        body[dir="rtl"] {
+            text-align: right;
+        }
+        
+        body[dir="rtl"] .astro-info-item {
+            flex-direction: row-reverse;
+        }
+        
+        body[dir="rtl"] .btn-group {
+            flex-direction: row-reverse;
+        }
+        
+        /* Style pour les chiffres - forcer l'affichage des chiffres arabes */
+        .number {
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Note d'utilisation en bas de page */
+        .usage-note {
+            margin-top: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(243, 244, 246, 0.8) 100%);
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .usage-note h3 {
+            color: #2563eb;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 8px;
+        }
+        
+        .usage-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .usage-step {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .usage-step h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #059669;
+        }
+        
+        .usage-step p {
+            margin: 0;
+            color: #4b5563;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        
+        body[dir="rtl"] .step-number {
+            margin-right: 0;
+            margin-left: 8px;
+        }
+        
+        body[dir="rtl"] .usage-step {
+            border-left: none;
+            border-right: 4px solid #10b981;
+        }
+        
+        /* Style pour les chiffres dans les inputs */
+        input[type="number"] {
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Style pour centrer le titre principal */
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .page-header h1 {
+            margin: 0;
+        }
+        
+        /* Style pour les messages d'erreur */
+        .error-message {
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .input-error {
+            border-color: #dc2626 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sélecteur de langue -->
+    <div class="language-selector">
+        <div class="lang-dropdown">
+            <button class="lang-dropdown-btn" onclick="toggleLangDropdown()">
+                <span class="lang-flag" id="currentLangFlag">🇫🇷</span>
+                <span id="currentLangText">Français</span>
+                <span style="font-size: 12px;">▼</span>
+            </button>
+            <div class="lang-dropdown-content" id="langDropdown">
+                <div class="lang-option active" onclick="changeLanguage('fr')">
+                    <span class="lang-flag">🇫🇷</span>
+                    <span>Français</span>
+                </div>
+                <div class="lang-option" onclick="changeLanguage('en')">
+                    <span class="lang-flag">🇬🇧</span>
+                    <span>English</span>
+                </div>
+                <div class="lang-option" onclick="changeLanguage('ar')">
+                    <span class="lang-flag">🇸🇦</span>
+                    <span>عربي</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- En-tête avec titre centré -->
+        <div class="page-header">
+            <h1 id="pageTitle">Observation du Croissant Lunaire (Hilal)</h1>
+        </div>
+        
+        <div class="grid-3">
+            <!-- Première carte : Position -->
+            <div class="card">
+                <h2 id="positionTitle">1. Position</h2>
+                
+                <!-- Champ de recherche par nom -->
+                <label for="locationSearch" id="searchLabel">Rechercher un lieu :</label>
+                <input type="text" id="locationSearch" placeholder="Ex: Paris, France (Appuyez sur Entrée)" autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
+                <div id="searchLoading" class="search-loading">Recherche en cours...</div>
+                
+                <!-- Bouton de localisation automatique -->
+                <button class="location-btn" onclick="getUserLocation()" id="locationBtn">📍 Ma Position Actuelle</button>
+                
+                <!-- Champ pour le nom du lieu (automatique) -->
+                <div class="location-name-container">
+                    <input type="text" id="locationName" class="location-name-input" placeholder="Nom du lieu (sera rempli automatiquement)" readonly>
+                </div>
+                
+                <label for="lat" id="latLabel">Latitude</label>
+                <input id="lat" type="number" step="0.000001" value="36.20534" min="-90" max="90">
+                <div id="latError" class="error-message">La latitude doit être entre -90° et 90°</div>
+                
+                <label for="lng" id="lngLabel">Longitude</label>
+                <input id="lng" type="number" step="0.000001" value="5.41173" min="-180" max="180">
+                <div id="lngError" class="error-message">La longitude doit être entre -180° et 180°</div>
+                
+                <label for="ele" id="eleLabel">Altitude (m)</label>
+                <input id="ele" type="number" value="0">
+            </div>
+            
+            <!-- Deuxième carte : Carte Interactive -->
+            <div class="card">
+                <h2 id="mapTitle">2. Carte Interactive</h2>
+                <div class="btn-group" id="mapButtons">
+                    <button onclick="switchLayer('osm', this)" class="active" id="mapBtnStandard">Standard</button>
+                    <button onclick="switchLayer('relief', this)" id="mapBtnRelief">Relief</button>
+                    <button onclick="switchLayer('sat', this)" id="mapBtnSatellite">Satellite</button>
+                </div>
+                <div id="map"></div>
+            </div>
+            
+            <!-- Troisième carte : Date et Critère de Visibilité -->
+            <div class="card">
+                <h2 id="dateTitle">3. Date et Critère de Visibilité</h2>
+                <label for="date" id="dateLabel">Date</label>
+                <input id="date" type="date">
+                <label for="criterion" id="criterionLabel">Critère de visibilité</label>
+                <select id="criterion">
+                    <option value="yallop">Yallop (Recommandé)</option>
+                    <option value="saao">SAAO (Afrique du Sud)</option>
+                    <option value="odeh">Odeh (Précis)</option>
+                    <option value="danjon">Danjon (Élongation)</option>
+                </select>
+                <button class="primary" onclick="syncFromInputs()" id="updateBtn">Mettre à jour</button>
+            </div>
+        </div>
+        
+        <!-- Quatrième carte : Informations Astronomiques -->
+        <div class="card" id="info">
+            <h2 id="infoTitle">4. Informations Astronomiques</h2>
+            <p id="loadingText">Chargement des données...</p>
+        </div>
+        
+        <!-- Cinquième carte : Panorama -->
+        <div class="card">
+            <h2 id="panoramaTitle">5. Panorama du Relief</h2>
+            <div class="content">
+                <canvas id="pfcanvas"></canvas>
+                <div id="pfcanvasprogress">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Note d'utilisation - Cette section sera générée dynamiquement -->
+        <div class="usage-note" id="usageNote"></div>
+    </div>
+
+    <script>
+        let map, marker, panel, isReady = false;
+        const MOON_RADIUS_KM = 1737.4;
+        const layers = {
+            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+            relief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'),
+            sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
+        };
+
+        // Dictionnaires de traduction
+        const translations = {
+            fr: {
+                pageTitle: "Observation du Croissant Lunaire (Hilal)",
+                positionTitle: "1. Position",
+                searchLabel: "Rechercher un lieu :",
+                searchPlaceholder: "Ex: Paris, France (Appuyez sur Entrée)",
+                locationBtn: "📍 Ma Position Actuelle",
+                locationPlaceholder: "Nom du lieu (sera rempli automatiquement)",
+                latLabel: "Latitude",
+                lngLabel: "Longitude",
+                eleLabel: "Altitude (m)",
+                mapTitle: "2. Carte Interactive",
+                mapBtnStandard: "Standard",
+                mapBtnRelief: "Relief",
+                mapBtnSatellite: "Satellite",
+                dateTitle: "3. Date et Critère de Visibilité",
+                dateLabel: "Date",
+                criterionLabel: "Critère de visibilité",
+                criterionOptions: {
+                    yallop: "Yallop (Recommandé)",
+                    saao: "SAAO (Afrique du Sud)",
+                    odeh: "Odeh (Précis)",
+                    danjon: "Danjon (Élongation)"
+                },
+                updateBtn: "Mettre à jour",
+                infoTitle: "4. Informations Astronomiques",
+                loadingText: "Chargement des données...",
+                panoramaTitle: "5. Panorama du Relief",
+                sunTitle: "Soleil",
+                moonTitle: "Lune",
+                sunsetLabel: "Coucher :",
+                sunriseLabel: "Lever :",
+                azimuthLabel: "Azimut :",
+                altitudeLabel: "Altitude :",
+                moonsetLabel: "Coucher :",
+                moonriseLabel: "Lever :",
+                visibilityTitle: "Visibilité du Croissant Lunaire",
+                stateLabel: "État :",
+                illuminationLabel: "Illumination :",
+                elongationLabel: "Élongation Soleil-Lune :",
+                crescentLabel: "Premier Croissant :",
+                searchLoading: "Recherche en cours...",
+                alreadyHidden: "Déjà cachée",
+                nearHorizon: "Très proche de l'horizon (risque de cachée)",
+                aboveHorizon: "Au-dessus de l'horizon",
+                visibilityResults: {
+                    yallop: {
+                        danger: "Non visible",
+                        warning: "Visible avec instrument",
+                        success: "Visible à l'œil nu"
+                    },
+                    saao: {
+                        danger: "Non visible (SAAO)",
+                        warning: "Possible avec instrument (SAAO)",
+                        success: "Visible à l'oeil nu (SAAO)"
+                    },
+                    odeh: {
+                        danger: "Non visible",
+                        warning: "Visible avec instrument",
+                        success1: "Possible à l'œil nu",
+                        success2: "Facile à l'œil nu"
+                    },
+                    danjon: {
+                        danger: "Impossible (Danjon)",
+                        warning: "Possible"
+                    }
+                },
+                usageTitle: "Comment utiliser cet outil",
+                step1Title: "Choisissez votre position",
+                step1Desc: "Utilisez la carte, recherchez un lieu ou cliquez sur \"Ma Position Actuelle\".",
+                step2Title: "Sélectionnez la date",
+                step2Desc: "Choisissez la date d'observation pour calculer les positions du soleil et de la lune.",
+                step3Title: "Consultez les informations",
+                step3Desc: "Analysez les données astronomiques et la visibilité du croissant lunaire.",
+                step4Title: "Visualisez le panorama",
+                step4Desc: "Observez la position de la lune par rapport au relief sur le panorama.",
+                usageTip: "Pour une observation optimale, choisissez un lieu avec un horizon dégagé vers l'ouest.",
+                latError: "La latitude doit être entre -90° et 90°",
+                lngError: "La longitude doit être entre -180° et 180°",
+                invalidPosition: "Position invalide"
+            },
+            en: {
+                pageTitle: "Lunar Crescent Observation (Hilal)",
+                positionTitle: "1. Position",
+                searchLabel: "Search for a place:",
+                searchPlaceholder: "Ex: Paris, France (Press Enter)",
+                locationBtn: "📍 My Current Location",
+                locationPlaceholder: "Place name (will be filled automatically)",
+                latLabel: "Latitude",
+                lngLabel: "Longitude",
+                eleLabel: "Elevation (m)",
+                mapTitle: "2. Interactive Map",
+                mapBtnStandard: "Standard",
+                mapBtnRelief: "Relief",
+                mapBtnSatellite: "Satellite",
+                dateTitle: "3. Date and Visibility Criterion",
+                dateLabel: "Date",
+                criterionLabel: "Visibility criterion",
+                criterionOptions: {
+                    yallop: "Yallop (Recommended)",
+                    saao: "SAAO (South Africa)",
+                    odeh: "Odeh (Precise)",
+                    danjon: "Danjon (Elongation)"
+                },
+                updateBtn: "Update",
+                infoTitle: "4. Astronomical Information",
+                loadingText: "Loading data...",
+                panoramaTitle: "5. Relief Panorama",
+                sunTitle: "Sun",
+                moonTitle: "Moon",
+                sunsetLabel: "Sunset:",
+                sunriseLabel: "Sunrise:",
+                azimuthLabel: "Azimuth:",
+                altitudeLabel: "Altitude:",
+                moonsetLabel: "Moonset:",
+                moonriseLabel: "Moonrise:",
+                visibilityTitle: "Lunar Crescent Visibility",
+                stateLabel: "State:",
+                illuminationLabel: "Illumination:",
+                elongationLabel: "Sun-Moon Elongation:",
+                crescentLabel: "First Crescent:",
+                searchLoading: "Searching...",
+                alreadyHidden: "Already hidden",
+                nearHorizon: "Very close to horizon (risk of hidden)",
+                aboveHorizon: "Above horizon",
+                visibilityResults: {
+                    yallop: {
+                        danger: "Not visible",
+                        warning: "Visible with instrument",
+                        success: "Visible to naked eye"
+                    },
+                    saao: {
+                        danger: "Not visible (SAAO)",
+                        warning: "Possible with instrument (SAAO)",
+                        success: "Visible to naked eye (SAAO)"
+                    },
+                    odeh: {
+                        danger: "Not visible",
+                        warning: "Visible with instrument",
+                        success1: "Possible to naked eye",
+                        success2: "Easy to naked eye"
+                    },
+                    danjon: {
+                        danger: "Impossible (Danjon)",
+                        warning: "Possible"
+                    }
+                },
+                usageTitle: "How to use this tool",
+                step1Title: "Choose your location",
+                step1Desc: "Use the map, search for a place or click \"My Current Location\".",
+                step2Title: "Select the date",
+                step2Desc: "Choose the observation date to calculate sun and moon positions.",
+                step3Title: "Check the information",
+                step3Desc: "Analyze astronomical data and crescent moon visibility.",
+                step4Title: "View the panorama",
+                step4Desc: "Observe the moon position relative to terrain on the panorama.",
+                usageTip: "For optimal observation, choose a location with clear western horizon.",
+                latError: "Latitude must be between -90° and 90°",
+                lngError: "Longitude must be between -180° and 180°",
+                invalidPosition: "Invalid position"
+            },
+            ar: {
+                pageTitle: "رصد الهلال",
+                positionTitle: "١. الموقع",
+                searchLabel: "البحث عن مكان:",
+                searchPlaceholder: "مثال: باريس، فرنسا (اضغط Enter)",
+                locationBtn: "📍 موقعي الحالي",
+                locationPlaceholder: "اسم المكان (سيتم ملؤه تلقائياً)",
+                latLabel: "خط العرض",
+                lngLabel: "خط الطول",
+                eleLabel: "الارتفاع (م)",
+                mapTitle: "٢. الخريطة التفاعلية",
+                mapBtnStandard: "قياسي",
+                mapBtnRelief: "تضاريس",
+                mapBtnSatellite: "قمر صناعي",
+                dateTitle: "٣. التاريخ ومعيار الرؤية",
+                dateLabel: "التاريخ",
+                criterionLabel: "معيار الرؤية",
+                criterionOptions: {
+                    yallop: "يالوب (مُوصى به)",
+                    saao: "SAAO (جنوب أفريقيا)",
+                    odeh: "عودة (دقيق)",
+                    danjon: "دانجون (الاستطالة)"
+                },
+                updateBtn: "تحديث",
+                infoTitle: "٤. المعلومات الفلكية",
+                loadingText: "جاري تحميل البيانات...",
+                panoramaTitle: "٥. بانوراما التضاريس",
+                sunTitle: "الشمس",
+                moonTitle: "القمر",
+                sunsetLabel: "غروب الشمس:",
+                sunriseLabel: "شروق الشمس:",
+                azimuthLabel: "السمت:",
+                altitudeLabel: "الارتفاع:",
+                moonsetLabel: "غروب القمر:",
+                moonriseLabel: "شروق القمر:",
+                visibilityTitle: "رؤية الهلال",
+                stateLabel: "الحالة:",
+                illuminationLabel: "الإضاءة:",
+                elongationLabel: "الاستطالة الشمس-قمر:",
+                crescentLabel: "الهلال الأول:",
+                searchLoading: "جاري البحث...",
+                alreadyHidden: "مخفي بالفعل",
+                nearHorizon: "قريب جداً من الأفق (خطر الاختفاء)",
+                aboveHorizon: "فوق الأفق",
+                visibilityResults: {
+                    yallop: {
+                        danger: "غير مرئي",
+                        warning: "مرئي بالأداة",
+                        success: "مرئي بالعين المجردة"
+                    },
+                    saao: {
+                        danger: "غير مرئي (SAAO)",
+                        warning: "ممكن بالأداة (SAAO)",
+                        success: "مرئي بالعين المجردة (SAAO)"
+                    },
+                    odeh: {
+                        danger: "غير مرئي",
+                        warning: "مرئي بالأداة",
+                        success1: "ممكن بالعين المجردة",
+                        success2: "سهل بالعين المجردة"
+                    },
+                    danjon: {
+                        danger: "مستحيل (دانجون)",
+                        warning: "ممكن"
+                    }
+                },
+                usageTitle: "كيفية استخدام هذه الأداة",
+                step1Title: "اختر موقعك",
+                step1Desc: "استخدم الخريطة، ابحث عن مكان أو انقر على \"موقعي الحالي\".",
+                step2Title: "حدد التاريخ",
+                step2Desc: "اختر تاريخ الرصد لحساب مواقع الشمس والقمر.",
+                step3Title: "راجع المعلومات",
+                step3Desc: "حلل البيانات الفلكية وإمكانية رؤية الهلال.",
+                step4Title: "شاهد البانوراما",
+                step4Desc: "راقب موقع القمر بالنسبة للتضاريس على البانوراما.",
+                usageTip: "للحصول على أفضل رصد، اختر موقعاً بأفق غربي مكشوف.",
+                latError: "يجب أن يكون خط العرض بين ٩٠° و ٩٠°-",
+                lngError: "يجب أن يكون خط الطول بين ١٨٠° و ١٨٠°-",
+                invalidPosition: "موقع غير صالح"
+            }
+        };
+
+        // Langue courante
+        let currentLang = 'fr';
+
+        // Fonction pour convertir les chiffres indiens en chiffres arabes
+        function convertIndianToArabicNumbers(text) {
+            if (!text) return text;
+            
+            // Table de conversion des chiffres indiens vers arabes
+            const indianToArabic = {
+                '٠': '0', '۰': '0',
+                '١': '1', '۱': '1',
+                '٢': '2', '۲': '2',
+                '٣': '3', '۳': '3',
+                '٤': '4', '۴': '4',
+                '٥': '5', '۵': '5',
+                '٦': '6', '۶': '6',
+                '٧': '7', '۷': '7',
+                '٨': '8', '۸': '8',
+                '٩': '9', '۹': '9'
+            };
+            
+            // Remplacer chaque chiffre indien par son équivalent arabe
+            return text.split('').map(char => indianToArabic[char] || char).join('');
+        }
+
+        // Fonction pour formater les nombres avec des chiffres arabes
+        function formatNumber(number) {
+            if (typeof number !== 'number') return number;
+            
+            // Formater le nombre avec 2 décimales max et convertir les chiffres
+            const formatted = number.toFixed(2).replace(/\.00$/, '');
+            return convertIndianToArabicNumbers(formatted);
+        }
+
+        // Fonction pour formater l'heure
+        function formatTime(date, lang) {
+            if (!date) return 'N/A';
+            
+            // Options de formatage selon la langue
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: lang === 'ar' ? false : false // 24h pour toutes les langues
+            };
+            
+            let timeString;
+            try {
+                timeString = date.toLocaleTimeString(lang === 'ar' ? 'ar-SA' : lang === 'en' ? 'en-US' : 'fr-FR', options);
+            } catch (e) {
+                timeString = date.toLocaleTimeString('fr-FR', options);
+            }
+            
+            // Convertir les chiffres indiens en chiffres arabes si nécessaire
+            return convertIndianToArabicNumbers(timeString);
+        }
+
+        // Fonction pour générer dynamiquement la section d'utilisation
+        function updateUsageSection() {
+            const t = translations[currentLang];
+            const tipPrefix = currentLang === 'en' ? 'Tip:' : currentLang === 'ar' ? 'نصيحة:' : 'Astuce :';
+            
+            const usageHTML = `
+                <h3>${t.usageTitle}</h3>
+                <div class="usage-steps">
+                    <div class="usage-step">
+                        <h4><span class="step-number">1</span> <span>${t.step1Title}</span></h4>
+                        <p>${t.step1Desc}</p>
+                    </div>
+                    <div class="usage-step">
+                        <h4><span class="step-number">2</span> <span>${t.step2Title}</span></h4>
+                        <p>${t.step2Desc}</p>
+                    </div>
+                    <div class="usage-step">
+                        <h4><span class="step-number">3</span> <span>${t.step3Title}</span></h4>
+                        <p>${t.step3Desc}</p>
+                    </div>
+                    <div class="usage-step">
+                        <h4><span class="step-number">4</span> <span>${t.step4Title}</span></h4>
+                        <p>${t.step4Desc}</p>
+                    </div>
+                </div>
+                <p><strong>${tipPrefix}</strong> ${t.usageTip}</p>
+            `;
+            
+            document.getElementById('usageNote').innerHTML = usageHTML;
+        }
+
+        // Fonction pour valider les coordonnées
+        function isValidCoordinates(lat, lng) {
+            return !isNaN(lat) && !isNaN(lng) && 
+                   lat >= -90 && lat <= 90 && 
+                   lng >= -180 && lng <= 180;
+        }
+
+        // Fonction pour afficher/masquer les erreurs de validation
+        function showValidationError(inputId, show, message = '') {
+            const input = document.getElementById(inputId);
+            const errorElement = document.getElementById(inputId + 'Error');
+            
+            if (show) {
+                input.classList.add('input-error');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                }
+            } else {
+                input.classList.remove('input-error');
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            }
+        }
+
+        function initMap() {
+            map = L.map('map').setView([36.20534, 5.41173], 10);
+            layers.osm.addTo(map);
+            marker = L.marker(map.getCenter(), { draggable: true }).addTo(map);
+            map.on('click', e => setPosition(e.latlng.lat, e.latlng.lng));
+            marker.on('dragend', () => setPosition(marker.getLatLng().lat, marker.getLatLng().lng));
+        }
+
+        function switchLayer(key, btn) {
+            Object.values(layers).forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+            layers[key].addTo(map);
+            document.querySelectorAll('#mapButtons button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        async function setPosition(lat, lng) {
+            // Validation des coordonnées
+            if (!isValidCoordinates(lat, lng)) {
+                const t = translations[currentLang];
+                document.getElementById('locationName').value = t.invalidPosition;
+                showValidationError('lat', true, t.latError);
+                showValidationError('lng', true, t.lngError);
+                return;
+            }
+            
+            // Masquer les erreurs
+            showValidationError('lat', false);
+            showValidationError('lng', false);
+            
+            document.getElementById('lat').value = lat.toFixed(6);
+            document.getElementById('lng').value = lng.toFixed(6);
+            marker.setLatLng([lat, lng]);
+            map.panTo([lat, lng]);
+            
+            // Récupérer le nom du lieu et l'altitude
+            await fetchLocationName(lat, lng);
+            await fetchElevation(lat, lng);
+            
+            updatePanorama();
+        }
+
+        function syncFromInputs() {
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            
+            // Validation avant de continuer
+            if (!isValidCoordinates(lat, lng)) {
+                const t = translations[currentLang];
+                showValidationError('lat', true, t.latError);
+                showValidationError('lng', true, t.lngError);
+                return;
+            }
+            
+            setPosition(lat, lng);
+        }
+
+        async function fetchElevation(lat, lng) {
+            try {
+                const response = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+                const json = await response.json();
+                const elevation = Math.round(json.results[0].elevation);
+                document.getElementById('ele').value = elevation;
+            } catch (e) { 
+                console.error('Erreur lors de la récupération de l\'altitude:', e);
+                document.getElementById('ele').value = 0;
+            }
+        }
+
+        // Fonction pour récupérer le nom du lieu à partir des coordonnées
+        async function fetchLocationName(lat, lng) {
+            // Validation des coordonnées
+            if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+                const t = translations[currentLang];
+                document.getElementById('locationName').value = t.invalidPosition;
+                return;
+            }
+            
+            try {
+                // Utiliser la langue courante pour la requête
+                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12&accept-language=${lang}`
+                );
+                
+                if (!response.ok) throw new Error('Erreur de réseau');
+                
+                const data = await response.json();
+                
+                if (data.display_name) {
+                    // Extraire un nom plus lisible (ville, région, pays)
+                    let placeName = currentLang === 'en' ? "Unnamed place" : 
+                                   currentLang === 'ar' ? "مكان غير مسمى" : 
+                                   "Lieu non nommé";
+                    
+                    // Essayer différents formats
+                    if (data.address) {
+                        if (data.address.city) {
+                            placeName = data.address.city;
+                            if (data.address.country) placeName += `, ${data.address.country}`;
+                        } else if (data.address.town) {
+                            placeName = data.address.town;
+                            if (data.address.country) placeName += `, ${data.address.country}`;
+                        } else if (data.address.village) {
+                            placeName = data.address.village;
+                            if (data.address.country) placeName += `, ${data.address.country}`;
+                        } else if (data.address.municipality) {
+                            placeName = data.address.municipality;
+                            if (data.address.country) placeName += `, ${data.address.country}`;
+                        } else if (data.address.country) {
+                            placeName = data.address.country;
+                        } else {
+                            // Utiliser les premiers éléments du nom complet
+                            const parts = data.display_name.split(',');
+                            if (parts.length >= 2) {
+                                placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
+                            } else {
+                                placeName = data.display_name;
+                            }
+                        }
+                    } else {
+                        // Utiliser les premiers et derniers éléments du nom complet
+                        const parts = data.display_name.split(',');
+                        if (parts.length >= 2) {
+                            placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
+                        } else {
+                            placeName = data.display_name;
+                        }
+                    }
+                    
+                    document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
+                } else {
+                    const positionText = currentLang === 'en' ? `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
+                                        currentLang === 'ar' ? `الموقع: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
+                                        `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+                    document.getElementById('locationName').value = positionText;
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération du nom du lieu:', error);
+                const positionText = currentLang === 'en' ? `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
+                                    currentLang === 'ar' ? `الموقع: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
+                                    `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+                document.getElementById('locationName').value = positionText;
+            }
+        }
+
+        // Fonction pour obtenir la position de l'utilisateur
+        function getUserLocation() {
+            if (!navigator.geolocation) {
+                alert(currentLang === 'en' ? "Geolocation is not supported by your browser." :
+                      currentLang === 'ar' ? "المتصفح الخاص بك لا يدعم تحديد الموقع الجغرافي." :
+                      "La géolocalisation n'est pas supportée par votre navigateur.");
+                return;
+            }
+            
+            const locationBtn = document.querySelector('.location-btn');
+            const originalText = locationBtn.textContent;
+            
+            // Texte selon la langue
+            const loadingText = currentLang === 'en' ? "⏳ Locating..." :
+                               currentLang === 'ar' ? "⏳ جاري تحديد الموقع..." :
+                               "⏳ Localisation en cours...";
+            
+            locationBtn.textContent = loadingText;
+            locationBtn.disabled = true;
+            
+            // Indiquer que nous cherchons le nom du lieu
+            const searchingText = currentLang === 'en' ? "Searching for place name..." :
+                                 currentLang === 'ar' ? "جاري البحث عن اسم المكان..." :
+                                 "Recherche du nom du lieu...";
+            document.getElementById('locationName').value = searchingText;
+            
+            navigator.geolocation.getCurrentPosition(
+                async function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Masquer les erreurs précédentes
+                    showValidationError('lat', false);
+                    showValidationError('lng', false);
+                    
+                    // Mettre à jour les champs
+                    document.getElementById('lat').value = lat.toFixed(6);
+                    document.getElementById('lng').value = lng.toFixed(6);
+                    
+                    // Récupérer le nom du lieu et l'altitude
+                    await fetchLocationName(lat, lng);
+                    await fetchElevation(lat, lng);
+                    
+                    // Mettre à jour la position sur la carte
+                    setPosition(lat, lng);
+                    
+                    // Recentrer la carte avec un zoom approprié
+                    map.setView([lat, lng], 12);
+                    
+                    // Rétablir le bouton
+                    locationBtn.textContent = originalText;
+                    locationBtn.disabled = false;
+                },
+                function(error) {
+                    let errorMessage = currentLang === 'en' ? "Unable to get your location. " :
+                                      currentLang === 'ar' ? "تعذر الحصول على موقعك. " :
+                                      "Impossible d'obtenir votre position. ";
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += currentLang === 'en' ? "Permission denied by user." :
+                                           currentLang === 'ar' ? "تم رفض الإذن من المستخدم." :
+                                           "Permission refusée par l'utilisateur.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += currentLang === 'en' ? "Position unavailable." :
+                                           currentLang === 'ar' ? "الموقع غير متاح." :
+                                           "Position indisponible.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += currentLang === 'en' ? "Location timeout." :
+                                           currentLang === 'ar' ? "انتهت مهلة تحديد الموقع." :
+                                           "Délai de localisation dépassé.";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            errorMessage += currentLang === 'en' ? "Unknown error." :
+                                           currentLang === 'ar' ? "خطأ غير معروف." :
+                                           "Erreur inconnue.";
+                            break;
+                    }
+                    
+                    alert(errorMessage);
+                    const notAvailableText = currentLang === 'en' ? "Position not available" :
+                                            currentLang === 'ar' ? "الموقع غير متاح" :
+                                            "Position non disponible";
+                    document.getElementById('locationName').value = notAvailableText;
+                    
+                    // Rétablir le bouton
+                    locationBtn.textContent = originalText;
+                    locationBtn.disabled = false;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function initPeakFinder() {
+            panel = new PeakFinder.PanoramaPanel({ canvasid: "pfcanvas", locale: "fr" });
+            panel.init(() => {
+                isReady = true;
+                panel.settings.showSun(1);
+                panel.settings.showMoon(1);
+                panel.settings.showGrid(1);
+                document.getElementById('pfcanvasprogress').style.display = 'none';
+                updatePanorama();
+            });
+        }
+
+        function elong(sun, moon) {
+            return Math.acos(Math.sin(sun.altitude) * Math.sin(moon.altitude) + Math.cos(sun.altitude) * Math.cos(moon.altitude) * Math.cos(sun.azimuth - moon.azimuth)) * 180 / Math.PI;
+        }
+
+        function crescentVisibility(sun, moon, illum, criterion) {
+            const e = elong(sun, moon);
+            const altMoon = moon.altitude * 180 / Math.PI;
+            const altSun = sun.altitude * 180 / Math.PI;
+            const lang = currentLang;
+            
+            if (criterion === "danjon") {
+                if (e < 7) return [translations[lang].visibilityResults.danjon.danger, "danger"];
+                return [translations[lang].visibilityResults.danjon.warning, "warning"];
+            }
+            
+            if (criterion === "yallop") {
+                if (e < 7 || altMoon < 3) return [translations[lang].visibilityResults.yallop.danger, "danger"];
+                if (e > 10 && altMoon > 5) return [translations[lang].visibilityResults.yallop.success, "success"];
+                return [translations[lang].visibilityResults.yallop.warning, "warning"];
+            }
+
+            if (criterion === "saao") {
+                // SAAO Criterion (South African Astronomical Observatory)
+                const arcv = altMoon - altSun;
+                const daz = Math.abs((moon.azimuth - sun.azimuth) * 180 / Math.PI);
+                const q = arcv - (5.22 - 0.0125 * daz + 0.002 * Math.pow(daz, 2));
+                if (q > 0.5) return [translations[lang].visibilityResults.saao.success, "success"];
+                if (q > 0) return [translations[lang].visibilityResults.saao.warning, "warning"];
+                return [translations[lang].visibilityResults.saao.danger, "danger"];
+            }
+            
+            if (criterion === "odeh") {
+                const sd = (MOON_RADIUS_KM / moon.distance) * (180 / Math.PI) * 60;
+                const w = 2 * sd * illum.fraction;
+                const poly = -0.1018 * Math.pow(w, 3) + 0.7319 * Math.pow(w, 2) - 6.3226 * w + 7.1651;
+                const v = (altMoon - altSun) - poly;
+                if (v >= 5.65) return [translations[lang].visibilityResults.odeh.success2, "success"];
+                if (v >= 2) return [translations[lang].visibilityResults.odeh.success1, "success"];
+                if (v >= -0.96) return [translations[lang].visibilityResults.odeh.warning, "warning"];
+                return [translations[lang].visibilityResults.odeh.danger, "danger"];
+            }
+        }
+
+        // Fonction pour estimer quand la Lune sera cachée par le relief
+        function estimateMoonBehindTerrain(moonAltitudeDeg) {
+            // Cette fonction est une estimation simple
+            // En réalité, il faudrait avoir le profil d'élévation exact
+            // Pour l'instant, nous retournons une estimation basée sur l'altitude actuelle
+            if (moonAltitudeDeg <= 0) {
+                return translations[currentLang].alreadyHidden;
+            }
+            
+            // Estimation simple : si la Lune est très basse, elle sera bientôt cachée
+            if (moonAltitudeDeg < 5) {
+                return translations[currentLang].nearHorizon;
+            }
+            
+            return translations[currentLang].aboveHorizon;
+        }
+
+        function updatePanorama() {
+            if (!isReady) return;
+            
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            const ele = parseInt(document.getElementById('ele').value) || 0;
+            const d = new Date(document.getElementById('date').value || Date.now());
+            
+            // Validation des coordonnées avant de continuer
+            if (!isValidCoordinates(lat, lng)) {
+                return;
+            }
+            
+            // Récupérer les heures du soleil et de la lune
+            const st = SunCalc.getTimes(d, lat, lng);
+            const mt = SunCalc.getMoonTimes(d, lat, lng);
+            
+            // Utiliser l'heure exacte du coucher du soleil pour le panorama
+            const sunsetTime = st.sunset;
+            
+            // Calculer les positions au moment du coucher du soleil
+            const sun = SunCalc.getPosition(sunsetTime, lat, lng);
+            const moon = SunCalc.getMoonPosition(sunsetTime, lat, lng);
+            const illum = SunCalc.getMoonIllumination(sunsetTime);
+            const [cresTxt, cresCls] = crescentVisibility(sun, moon, illum, document.getElementById('criterion').value);
+
+            // Calculer les azimuts et altitudes en degrés (nord=0)
+            // Conversion de l'azimut : SunCalc utilise sud=0, nous voulons nord=0
+            const sunAzimuthDeg = (sun.azimuth * 180 / Math.PI + 180) % 360;
+            const sunAltitudeDeg = sun.altitude * 180 / Math.PI;
+            const moonAzimuthDeg = (moon.azimuth * 180 / Math.PI + 180) % 360;
+            const moonAltitudeDeg = moon.altitude * 180 / Math.PI;
+            
+            // Estimation du moment où la Lune est cachée par le relief
+            const moonHiddenStatus = estimateMoonBehindTerrain(moonAltitudeDeg);
+            
+            // Mettre à jour les informations astronomiques avec la nouvelle mise en page
+            document.getElementById('info').innerHTML = `
+                <h2>${translations[currentLang].infoTitle}</h2>
+                <div class="astro-grid">
+                    <!-- Section Soleil -->
+                    <div class="astro-section sun-section">
+                        <div class="astro-header">
+                            <div class="sun-icon">☀️</div>
+                            <h3 style="margin: 0; color: #f59e0b;">${translations[currentLang].sunTitle}</h3>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].sunsetLabel}</span>
+                            <span class="info-value">${formatTime(sunsetTime, currentLang)}</span>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].azimuthLabel}</span>
+                            <span class="info-value">${formatNumber(sunAzimuthDeg)}° ${currentLang === 'en' ? '(N=0)' : currentLang === 'ar' ? '(الشمال=0)' : '(N=0)'}</span>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].altitudeLabel}</span>
+                            <span class="info-value">${formatNumber(sunAltitudeDeg)}°</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Section Lune -->
+                    <div class="astro-section moon-section">
+                        <div class="astro-header">
+                            <div class="moon-icon">🌙</div>
+                            <h3 style="margin: 0; color: #6b7280;">${translations[currentLang].moonTitle}</h3>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].moonsetLabel}</span>
+                            <span class="info-value">${mt.set ? formatTime(mt.set, currentLang) : 'N/A'}</span>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].azimuthLabel}</span>
+                            <span class="info-value">${formatNumber(moonAzimuthDeg)}° ${currentLang === 'en' ? '(N=0)' : currentLang === 'ar' ? '(الشمال=0)' : '(N=0)'}</span>
+                        </div>
+                        <div class="astro-info-item">
+                            <span class="info-label">${translations[currentLang].altitudeLabel}</span>
+                            <span class="info-value">${formatNumber(moonAltitudeDeg)}°</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Visibilité -->
+                <div class="visibility-section">
+                    <div class="visibility-header">
+                        <div class="visibility-icon">🔭</div>
+                        <h3 style="margin: 0; color: #2563eb;">${translations[currentLang].visibilityTitle}</h3>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">${translations[currentLang].stateLabel}</span>
+                        <span class="info-value">${moonHiddenStatus}</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">${translations[currentLang].illuminationLabel}</span>
+                        <span class="info-value">${formatNumber(illum.fraction * 100)}%</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">${translations[currentLang].elongationLabel}</span>
+                        <span class="info-value">${formatNumber(elong(sun, moon))}°</span>
+                    </div>
+                    <div class="astro-info-item">
+                        <span class="info-label">${translations[currentLang].crescentLabel}</span>
+                        <span class="info-value"><span class="${cresCls}">${cresTxt}</span></span>
+                    </div>
+                </div>`;
+
+            // Configurer PeakFinder avec l'heure exacte du coucher du soleil en UTC
+            try {
+                panel.loadViewpoint(lat, lng, "Observation");
+                panel.elevationOffset(ele);
+                
+                // 1. Créer une date UTC à partir de l'heure du coucher du soleil
+                const sunsetUTC = new Date(sunsetTime.toISOString());
+                
+                // 2. Transférer l'heure UTC à PeakFinder
+                panel.astro.currentDateTime(
+                    sunsetUTC.getUTCFullYear(),
+                    sunsetUTC.getUTCMonth() + 1, // +1 car les mois sont 0-11
+                    sunsetUTC.getUTCDate(),
+                    sunsetUTC.getUTCHours(),
+                    sunsetUTC.getUTCMinutes()
+                );
+                
+                // 3. Calculer l'azimut de la Lune en degrés (0-360) avec le nord comme référence
+                const moonAzimuthDegForPanorama = (moon.azimuth * 180 / Math.PI + 180) % 360;
+                
+                // 4. Centrer le panorama sur l'azimut de la Lune
+                panel.azimut(moonAzimuthDegForPanorama);
+                
+                // 5. Définir un champ de vision approprié
+                panel.fieldofview(60);
+                
+                // 6. Forcer un redessin du panorama
+                if (typeof panel.redraw === 'function') {
+                    panel.redraw();
+                }
+                
+            } catch (e) { 
+                console.error('Erreur Panorama:', e);
+                try {
+                    const canvas = document.getElementById('pfcanvas');
+                    canvas.width = canvas.width;
+                    
+                    setTimeout(() => {
+                        panel.loadViewpoint(lat, lng, "Observation");
+                        panel.elevationOffset(ele);
+                        
+                        const sunsetUTC = new Date(sunsetTime.toISOString());
+                        panel.astro.currentDateTime(
+                            sunsetUTC.getUTCFullYear(),
+                            sunsetUTC.getUTCMonth() + 1,
+                            sunsetUTC.getUTCDate(),
+                            sunsetUTC.getUTCHours(),
+                            sunsetUTC.getUTCMinutes()
+                        );
+                        
+                        const moonAzimuthDegForPanorama = (moon.azimuth * 180 / Math.PI + 180) % 360;
+                        panel.azimut(moonAzimuthDegForPanorama);
+                        panel.fieldofview(60);
+                    }, 100);
+                } catch (retryError) {
+                    console.error('Erreur lors de la seconde tentative:', retryError);
+                }
+            }
+        }
+
+        // Fonction de recherche de lieu
+        async function searchLocation() {
+            const searchInput = document.getElementById('locationSearch');
+            const searchTerm = searchInput.value.trim();
+            
+            if (!searchTerm) return;
+            
+            const searchLoading = document.getElementById('searchLoading');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchLoading.style.display = 'block';
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+            
+            try {
+                // Utilisation de l'API Nominatim d'OpenStreetMap avec la langue courante
+                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&accept-language=${lang}`
+                );
+                
+                if (!response.ok) throw new Error('Erreur de réseau');
+                
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    const noResultsText = currentLang === 'en' ? 'No results found' :
+                                         currentLang === 'ar' ? 'لم يتم العثور على نتائج' :
+                                         'Aucun résultat trouvé';
+                    searchResults.innerHTML = `<div class="search-result-item">${noResultsText}</div>`;
+                } else {
+                    results.forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        
+                        const latLabel = currentLang === 'en' ? 'Lat' : currentLang === 'ar' ? 'عرض' : 'Lat';
+                        const lngLabel = currentLang === 'en' ? 'Lng' : currentLang === 'ar' ? 'طول' : 'Lng';
+                        
+                        item.innerHTML = `
+                            <strong>${convertIndianToArabicNumbers(result.display_name.split(',').slice(0, 2).join(','))}</strong><br>
+                            <small>${latLabel}: ${result.lat}, ${lngLabel}: ${result.lon}</small>
+                        `;
+                        
+                        item.addEventListener('click', () => {
+                            const lat = parseFloat(result.lat);
+                            const lng = parseFloat(result.lon);
+                            
+                            // Masquer les erreurs précédentes
+                            showValidationError('lat', false);
+                            showValidationError('lng', false);
+                            
+                            // Mettre à jour les champs de coordonnées
+                            document.getElementById('lat').value = lat.toFixed(6);
+                            document.getElementById('lng').value = lng.toFixed(6);
+                            
+                            // Mettre à jour le champ de recherche avec le nom complet
+                            searchInput.value = convertIndianToArabicNumbers(result.display_name.split(',')[0]);
+                            
+                            // Mettre à jour le champ de nom du lieu
+                            const placeName = result.display_name.split(',').slice(0, 2).join(',');
+                            document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
+                            
+                            // Masquer les résultats
+                            searchResults.style.display = 'none';
+                            
+                            // Mettre à jour la position sur la carte
+                            setPosition(lat, lng);
+                        });
+                        
+                        searchResults.appendChild(item);
+                    });
+                }
+                
+                searchResults.style.display = 'block';
+            } catch (error) {
+                console.error('Erreur de recherche:', error);
+                const errorText = currentLang === 'en' ? 'Error during search' :
+                                 currentLang === 'ar' ? 'خطأ أثناء البحث' :
+                                 'Erreur lors de la recherche';
+                searchResults.innerHTML = `<div class="search-result-item">${errorText}</div>`;
+                searchResults.style.display = 'block';
+            } finally {
+                searchLoading.style.display = 'none';
+            }
+        }
+
+        // Fonction pour changer la langue
+        function changeLanguage(lang) {
+            currentLang = lang;
+            
+            // Changer la direction du texte pour l'arabe
+            if (lang === 'ar') {
+                document.body.dir = 'rtl';
+                document.body.style.textAlign = 'right';
+            } else {
+                document.body.dir = 'ltr';
+                document.body.style.textAlign = 'left';
+            }
+            
+            // Mettre à jour les textes
+            updateTexts();
+            
+            // Mettre à jour la section d'utilisation
+            updateUsageSection();
+            
+            // Mettre à jour le sélecteur de langue (la langue reste affichée sur le bouton)
+            updateLangSelector(lang);
+            
+            // Mettre à jour le panorama
+            if (isReady) {
+                updatePanorama();
+            }
+            
+            // Fermer le menu déroulant
+            document.getElementById('langDropdown').classList.remove('show');
+            
+            // Sauvegarder la préférence de langue
+            localStorage.setItem('hilal-lang-preference', lang);
+        }
+
+        // Fonction pour mettre à jour tous les textes
+        function updateTexts() {
+            const t = translations[currentLang];
+            
+            // Titre de la page (déjà centré par CSS)
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            
+            // Section Position
+            document.getElementById('positionTitle').textContent = t.positionTitle;
+            document.getElementById('searchLabel').textContent = t.searchLabel;
+            document.getElementById('locationSearch').placeholder = t.searchPlaceholder;
+            document.getElementById('locationBtn').textContent = t.locationBtn;
+            document.getElementById('locationName').placeholder = t.locationPlaceholder;
+            document.getElementById('latLabel').textContent = t.latLabel;
+            document.getElementById('lngLabel').textContent = t.lngLabel;
+            document.getElementById('eleLabel').textContent = t.eleLabel;
+            
+            // Mettre à jour les messages d'erreur
+            document.getElementById('latError').textContent = t.latError;
+            document.getElementById('lngError').textContent = t.lngError;
+            
+            // Section Carte
+            document.getElementById('mapTitle').textContent = t.mapTitle;
+            document.getElementById('mapBtnStandard').textContent = t.mapBtnStandard;
+            document.getElementById('mapBtnRelief').textContent = t.mapBtnRelief;
+            document.getElementById('mapBtnSatellite').textContent = t.mapBtnSatellite;
+            
+            // Section Date
+            document.getElementById('dateTitle').textContent = t.dateTitle;
+            document.getElementById('dateLabel').textContent = t.dateLabel;
+            document.getElementById('criterionLabel').textContent = t.criterionLabel;
+            
+            // Options du critère de visibilité
+            const criterionSelect = document.getElementById('criterion');
+            Array.from(criterionSelect.options).forEach(option => {
+                const value = option.value;
+                if (t.criterionOptions[value]) {
+                    option.textContent = t.criterionOptions[value];
+                }
+            });
+            
+            document.getElementById('updateBtn').textContent = t.updateBtn;
+            document.getElementById('infoTitle').textContent = t.infoTitle;
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
+            
+            // Texte de chargement de recherche
+            document.getElementById('searchLoading').textContent = t.searchLoading;
+        }
+
+        // Fonction pour mettre à jour le sélecteur de langue
+        function updateLangSelector(lang) {
+            const langTexts = {
+                'fr': 'Français',
+                'en': 'English',
+                'ar': 'عربي'
+            };
+            
+            const langFlags = {
+                'fr': '🇫🇷',
+                'en': '🇬🇧',
+                'ar': '🇸🇦'
+            };
+            
+            // Mettre à jour le texte et le drapeau sur le bouton
+            document.getElementById('currentLangText').textContent = langTexts[lang];
+            document.getElementById('currentLangFlag').textContent = langFlags[lang];
+            
+            // Mettre à jour les options actives dans le menu déroulant
+            document.querySelectorAll('.lang-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('onclick') === `changeLanguage('${lang}')`) {
+                    option.classList.add('active');
+                }
+            });
+        }
+
+        // Fonction pour afficher/masquer le menu déroulant
+        function toggleLangDropdown() {
+            document.getElementById('langDropdown').classList.toggle('show');
+        }
+
+        // Fermer le menu déroulant quand on clique ailleurs
+        document.addEventListener('click', function(e) {
+            const langDropdown = document.getElementById('langDropdown');
+            const langBtn = document.querySelector('.lang-dropdown-btn');
+            
+            if (!langDropdown.contains(e.target) && !langBtn.contains(e.target)) {
+                langDropdown.classList.remove('show');
+            }
+        });
+
+        // Recherche automatique avec la touche Entrée
+        document.getElementById('locationSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+
+        // Validation en temps réel des champs de coordonnées
+        document.getElementById('lat').addEventListener('change', function() {
+            const lat = parseFloat(this.value);
+            const t = translations[currentLang];
+            
+            if (isNaN(lat) || lat < -90 || lat > 90) {
+                showValidationError('lat', true, t.latError);
+            } else {
+                showValidationError('lat', false);
+                const lng = parseFloat(document.getElementById('lng').value);
+                if (!isNaN(lng)) {
+                    fetchLocationName(lat, lng);
+                }
+            }
+        });
+
+        document.getElementById('lng').addEventListener('change', function() {
+            const lng = parseFloat(this.value);
+            const t = translations[currentLang];
+            
+            if (isNaN(lng) || lng < -180 || lng > 180) {
+                showValidationError('lng', true, t.lngError);
+            } else {
+                showValidationError('lng', false);
+                const lat = parseFloat(document.getElementById('lat').value);
+                if (!isNaN(lat)) {
+                    fetchLocationName(lat, lng);
+                }
+            }
+        });
+
+        window.onload = async () => {
+            document.getElementById('date').valueAsDate = new Date();
+            initMap();
+            initPeakFinder();
+            
+            // Vérifier si une préférence de langue est sauvegardée
+            const savedLang = localStorage.getItem('hilal-lang-preference');
+            if (savedLang && (savedLang === 'fr' || savedLang === 'en' || savedLang === 'ar')) {
+                changeLanguage(savedLang);
+            } else {
+                // Langue par défaut: français
+                changeLanguage('fr');
+            }
+            
+            // Récupérer le nom du lieu pour la position par défaut
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            await fetchLocationName(lat, lng);
+        };
+    </script>
+</body>
+</html>
