@@ -374,7 +374,6 @@
             border-color: #dc2626 !important;
         }
         
-        /* Styles pour la signature responsive */
         .author-signature {
             margin-top: 30px;
             padding: 20px;
@@ -410,6 +409,24 @@
             .author-signature {
                 padding: 15px;
             }
+        }
+
+        .time-options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+        .time-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+            margin: 0;
         }
     </style>
 </head>
@@ -500,9 +517,31 @@
             </div>
         </div>
         
-        <!-- Quatrième carte : Informations Astronomiques -->
+        <!-- Quatrième carte : Informations Astronomiques avec options de temps -->
         <div class="card" id="info">
             <h2 id="infoTitle">4. Informations Astronomiques</h2>
+            
+            <!-- Options de temps -->
+            <div class="time-options">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600;">⏰</span>
+                    <label>
+                        <input type="radio" name="timeMode" value="local" checked onchange="changeTimeMode('local')"> 
+                        <span id="localTimeLabel">محلي</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="timeMode" value="utc" onchange="changeTimeMode('utc')"> 
+                        <span id="utcTimeLabel">UTC</span>
+                    </label>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;" id="dstOption">
+                    <label>
+                        <input type="checkbox" id="dstCheckbox" onchange="toggleDST()"> 
+                        <span id="dstLabel">التوقيت الصيفي (DST)</span>
+                    </label>
+                </div>
+            </div>
+            
             <p id="loadingText">Chargement des données...</p>
         </div>
         
@@ -526,7 +565,7 @@
                 <!-- Français -->
                 <div style="font-family: 'system-ui', sans-serif;">
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Designer:</span>
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Website Designer:</span>
                         <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
                     </div>
                     <div style="font-size: 0.9em; color: #4b5563;">
@@ -551,7 +590,7 @@
                 <div style="font-family: 'system-ui', sans-serif; text-align: right;">
                     <div style="margin-bottom: 8px;">
                         <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">📌 Version:</span>
-                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">1.0</span>
+                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">2.0</span>
                     </div>
                     <div style="font-size: 0.9em; color: #4b5563;">
                         <span style="font-weight: 600;">🌍 </span>
@@ -579,15 +618,21 @@
     </div>
 
     <script>
+        // ==================== Variables globales ====================
         let map, marker, panel, isReady = false;
         const MOON_RADIUS_KM = 1737.4;
+        const SYNODIC_MONTH_DAYS = 29.530588; // Mois lunaire moyen
         const layers = {
             osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
             relief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'),
             sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
         };
 
-        // Dictionnaires de traduction
+        // Paramètres d'affichage du temps
+        let timeDisplayMode = 'local'; // 'local' ou 'utc'
+        let dstEnabled = false; // Heure d'été (appliqué seulement au mode local)
+
+        // ==================== Traductions ====================
         const translations = {
             fr: {
                 pageTitle: "Observation du Croissant Lunaire (Hilal)",
@@ -667,7 +712,11 @@
                 usageTip: "Pour une observation optimale, choisissez un lieu avec un horizon dégagé vers l'ouest.",
                 latError: "La latitude doit être entre -90° et 90°",
                 lngError: "La longitude doit être entre -180° et 180°",
-                invalidPosition: "Position invalide"
+                invalidPosition: "Position invalide",
+                localTimeLabel: "Local",
+                utcTimeLabel: "UTC",
+                dstLabel: "Heure d'été (DST)",
+                moonAgeLabel: "Âge de la Lune"
             },
             en: {
                 pageTitle: "Lunar Crescent Observation (Hilal)",
@@ -747,7 +796,11 @@
                 usageTip: "For optimal observation, choose a location with clear western horizon.",
                 latError: "Latitude must be between -90° and 90°",
                 lngError: "Longitude must be between -180° and 180°",
-                invalidPosition: "Invalid position"
+                invalidPosition: "Invalid position",
+                localTimeLabel: "Local",
+                utcTimeLabel: "UTC",
+                dstLabel: "Daylight Saving Time (DST)",
+                moonAgeLabel: "Moon Age"
             },
             ar: {
                 pageTitle: "رصد الهلال",
@@ -791,7 +844,7 @@
                 crescentLabel: "إمكانية رؤية الهلال:",
                 searchLoading: "جاري البحث...",
                 alreadyHidden: "مخفي بالفعل",
-                nearHorizon: "قريب جداً من الأفق ",
+                nearHorizon: "قريب جداً من الأفق",
                 aboveHorizon: "فوق الأفق",
                 visibilityResults: {
                     yallop: {
@@ -827,140 +880,72 @@
                 usageTip: "للحصول على أفضل رصد، اختر موقعاً بأفق غربي مكشوف.",
                 latError: "يجب أن يكون خط العرض بين ٩٠° و ٩٠°-",
                 lngError: "يجب أن يكون خط الطول بين ١٨٠° و ١٨٠°-",
-                invalidPosition: "موقع غير صالح"
+                invalidPosition: "موقع غير صالح",
+                localTimeLabel: "محلي",
+                utcTimeLabel: "UTC",
+                dstLabel: "التوقيت الصيفي",
+                moonAgeLabel: "عمر القمر"
             }
         };
 
-        // Langue courante
         let currentLang = 'fr';
 
-        // ============================================
-        // دوال تعديل معايير الرؤية حسب ارتفاع الموقع
-        // ============================================
+        // ==================== Fonctions de temps ====================
+        function getTimeZoneOffsetMinutes(lng) {
+            // 15° = 60 minutes, arrondi à 15 min près
+            return Math.round(lng / 15) * 60;
+        }
 
-        function adjustCriterionByElevation(baseValue, elevation, criterion) {
-            if (elevation <= 0) return baseValue;
+        function utcToLocalTime(date, lng, dst) {
+            const offsetMinutes = getTimeZoneOffsetMinutes(lng) + (dst ? 60 : 0);
+            return new Date(date.getTime() + offsetMinutes * 60 * 1000);
+        }
+
+        function formatTime(date, lang, mode = timeDisplayMode, dst = dstEnabled) {
+            if (!date) return 'N/A';
             
-            let improvementFactor = 0;
+            let displayDate;
+            if (mode === 'utc') {
+                displayDate = date; // UTC
+            } else {
+                const lng = parseFloat(document.getElementById('lng').value) || 0;
+                displayDate = utcToLocalTime(date, lng, dst);
+            }
             
-            switch(criterion) {
-                case 'yallop':
-                    improvementFactor = (elevation / 1000) * 0.5;
-                    return baseValue - improvementFactor;
-                case 'saao':
-                    improvementFactor = (elevation / 1000) * 0.4;
-                    return baseValue + improvementFactor;
-                case 'odeh':
-                    improvementFactor = (elevation / 1000) * 0.6;
-                    return baseValue - improvementFactor;
-                case 'danjon':
-                    improvementFactor = (elevation / 1000) * 0.3;
-                    return baseValue - improvementFactor;
-                default:
-                    return baseValue;
+            // Pour éviter les décalages, on affiche en UTC après conversion manuelle
+            const options = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' };
+            let timeString;
+            try {
+                timeString = displayDate.toLocaleTimeString('en-GB', options);
+            } catch (e) {
+                const hours = displayDate.getUTCHours().toString().padStart(2, '0');
+                const minutes = displayDate.getUTCMinutes().toString().padStart(2, '0');
+                timeString = `${hours}:${minutes}`;
+            }
+            return convertIndianToArabicNumbers(timeString);
+        }
+
+        // ==================== Âge de la Lune ====================
+        function getMoonAgeString(phase) {
+            const ageDays = phase * SYNODIC_MONTH_DAYS;
+            if (ageDays < 1) {
+                const hours = Math.round(ageDays * 24);
+                return `${hours} heure${hours > 1 ? 's' : ''}`;
+            } else {
+                const days = ageDays.toFixed(1);
+                return `${days} jour${days > 1 ? 's' : ''}`;
             }
         }
 
-        function getAtmosphericTransparency(elevation) {
-            if (elevation <= 0) return 1.0;
-            return 1.0 + (elevation / 3000) * 0.2;
-        }
-
-        function adjustedYallop(elongation, moonAlt, elevation) {
-            const DANGER_LIMIT = 7;
-            const SUCCESS_LIMIT = 10;
-            
-            const adjustedDanger = adjustCriterionByElevation(DANGER_LIMIT, elevation, 'yallop');
-            const adjustedSuccess = adjustCriterionByElevation(SUCCESS_LIMIT, elevation, 'yallop');
-            
-            if (elongation < adjustedDanger || moonAlt < 3) {
-                return ["danger", adjustedDanger, adjustedSuccess];
-            }
-            if (elongation > adjustedSuccess && moonAlt > 5) {
-                return ["success", adjustedDanger, adjustedSuccess];
-            }
-            return ["warning", adjustedDanger, adjustedSuccess];
-        }
-
-        function adjustedSAAO(arcv, daz, q, elevation) {
-            const WARNING_LIMIT = 0;
-            const SUCCESS_LIMIT = 0.5;
-            
-            const adjustedWarning = adjustCriterionByElevation(WARNING_LIMIT, elevation, 'saao');
-            const adjustedSuccess = adjustCriterionByElevation(SUCCESS_LIMIT, elevation, 'saao');
-            
-            if (q > adjustedSuccess) return ["success", adjustedWarning, adjustedSuccess];
-            if (q > adjustedWarning) return ["warning", adjustedWarning, adjustedSuccess];
-            return ["danger", adjustedWarning, adjustedSuccess];
-        }
-
-        function adjustedOdeh(v, w, elevation) {
-            const DANGER_LIMIT = -0.96;
-            const WARNING_LIMIT = 2;
-            const SUCCESS1_LIMIT = 5.65;
-            
-            const adjustedDanger = adjustCriterionByElevation(DANGER_LIMIT, elevation, 'odeh');
-            const adjustedWarning = adjustCriterionByElevation(WARNING_LIMIT, elevation, 'odeh');
-            const adjustedSuccess1 = adjustCriterionByElevation(SUCCESS1_LIMIT, elevation, 'odeh');
-            
-            if (v >= adjustedSuccess1) return ["success2", adjustedDanger, adjustedWarning, adjustedSuccess1];
-            if (v >= adjustedWarning) return ["success1", adjustedDanger, adjustedWarning, adjustedSuccess1];
-            if (v >= adjustedDanger) return ["warning", adjustedDanger, adjustedWarning, adjustedSuccess1];
-            return ["danger", adjustedDanger, adjustedWarning, adjustedSuccess1];
-        }
-
-        function adjustedDanjon(elongation, elevation) {
-            const DANJON_LIMIT = 7;
-            const adjustedLimit = adjustCriterionByElevation(DANJON_LIMIT, elevation, 'danjon');
-            
-            if (elongation < adjustedLimit) {
-                return ["danger", adjustedLimit];
-            }
-            return ["warning", adjustedLimit];
-        }
-
-        function getVisibilityText(status, criterion, lang) {
-            const t = translations[lang].visibilityResults;
-            
-            switch(criterion) {
-                case 'yallop':
-                    if (status === 'danger') return t.yallop.danger;
-                    if (status === 'warning') return t.yallop.warning;
-                    return t.yallop.success;
-                case 'saao':
-                    if (status === 'danger') return t.saao.danger;
-                    if (status === 'warning') return t.saao.warning;
-                    return t.saao.success;
-                case 'odeh':
-                    if (status === 'danger') return t.odeh.danger;
-                    if (status === 'warning') return t.odeh.warning;
-                    if (status === 'success1') return t.odeh.success1;
-                    return t.odeh.success2;
-                case 'danjon':
-                    if (status === 'danger') return t.danjon.danger;
-                    return t.danjon.warning;
-                default:
-                    return "N/A";
-            }
-        }
-
+        // ==================== Fonctions de validation et conversion ====================
         function convertIndianToArabicNumbers(text) {
             if (!text) return text;
-            
             const indianToArabic = {
-                '٠': '0', '۰': '0',
-                '١': '1', '۱': '1',
-                '٢': '2', '۲': '2',
-                '٣': '3', '۳': '3',
-                '٤': '4', '۴': '4',
-                '٥': '5', '۵': '5',
-                '٦': '6', '۶': '6',
-                '٧': '7', '۷': '7',
-                '٨': '8', '۸': '8',
-                '٩': '9', '۹': '9'
+                '٠':'0','۰':'0','١':'1','۱':'1','٢':'2','۲':'2','٣':'3','۳':'3',
+                '٤':'4','۴':'4','٥':'5','۵':'5','٦':'6','۶':'6','٧':'7','۷':'7',
+                '٨':'8','۸':'8','٩':'9','۹':'9'
             };
-            
-            return text.split('').map(char => indianToArabic[char] || char).join('');
+            return text.split('').map(c => indianToArabic[c] || c).join('');
         }
 
         function formatNumber(number) {
@@ -969,79 +954,26 @@
             return convertIndianToArabicNumbers(formatted);
         }
 
-        function formatTime(date, lang) {
-            if (!date) return 'N/A';
-            
-            const options = {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            };
-            
-            let timeString;
-            try {
-                timeString = date.toLocaleTimeString(lang === 'ar' ? 'ar-SA' : lang === 'en' ? 'en-US' : 'fr-FR', options);
-            } catch (e) {
-                timeString = date.toLocaleTimeString('fr-FR', options);
-            }
-            
-            return convertIndianToArabicNumbers(timeString);
-        }
-
-        function updateUsageSection() {
-            const t = translations[currentLang];
-            const tipPrefix = currentLang === 'en' ? 'Tip:' : currentLang === 'ar' ? 'نصيحة:' : 'Astuce :';
-            
-            const usageHTML = `
-                <h3>${t.usageTitle}</h3>
-                <div class="usage-steps">
-                    <div class="usage-step">
-                        <h4><span class="step-number">1</span> <span>${t.step1Title}</span></h4>
-                        <p>${t.step1Desc}</p>
-                    </div>
-                    <div class="usage-step">
-                        <h4><span class="step-number">2</span> <span>${t.step2Title}</span></h4>
-                        <p>${t.step2Desc}</p>
-                    </div>
-                    <div class="usage-step">
-                        <h4><span class="step-number">3</span> <span>${t.step3Title}</span></h4>
-                        <p>${t.step3Desc}</p>
-                    </div>
-                    <div class="usage-step">
-                        <h4><span class="step-number">4</span> <span>${t.step4Title}</span></h4>
-                        <p>${t.step4Desc}</p>
-                    </div>
-                </div>
-                <p><strong>${tipPrefix}</strong> ${t.usageTip}</p>
-            `;
-            
-            document.getElementById('usageNote').innerHTML = usageHTML;
-        }
-
         function isValidCoordinates(lat, lng) {
-            return !isNaN(lat) && !isNaN(lng) && 
-                   lat >= -90 && lat <= 90 && 
-                   lng >= -180 && lng <= 180;
+            return !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
         }
 
-        function showValidationError(inputId, show, message = '') {
+        function showValidationError(inputId, show, message) {
             const input = document.getElementById(inputId);
-            const errorElement = document.getElementById(inputId + 'Error');
-            
+            const errorEl = document.getElementById(inputId + 'Error');
             if (show) {
                 input.classList.add('input-error');
-                if (errorElement) {
-                    errorElement.textContent = message;
-                    errorElement.style.display = 'block';
+                if (errorEl) {
+                    errorEl.textContent = message;
+                    errorEl.style.display = 'block';
                 }
             } else {
                 input.classList.remove('input-error');
-                if (errorElement) {
-                    errorElement.style.display = 'none';
-                }
+                if (errorEl) errorEl.style.display = 'none';
             }
         }
 
+        // ==================== Fonctions de carte et position ====================
         function initMap() {
             map = L.map('map').setView([36.20534, 5.41173], 10);
             layers.osm.addTo(map);
@@ -1057,6 +989,41 @@
             btn.classList.add('active');
         }
 
+        async function fetchElevation(lat, lng) {
+            try {
+                const resp = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+                const json = await resp.json();
+                document.getElementById('ele').value = Math.round(json.results[0].elevation);
+            } catch { document.getElementById('ele').value = 0; }
+        }
+
+        async function fetchLocationName(lat, lng) {
+            if (isNaN(lat) || isNaN(lng)) {
+                document.getElementById('locationName').value = translations[currentLang].invalidPosition;
+                return;
+            }
+            try {
+                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
+                const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12&accept-language=${lang}`);
+                if (!resp.ok) throw new Error();
+                const data = await resp.json();
+                let placeName = '';
+                if (data.address) {
+                    if (data.address.city) placeName = data.address.city;
+                    else if (data.address.town) placeName = data.address.town;
+                    else if (data.address.village) placeName = data.address.village;
+                    else if (data.address.municipality) placeName = data.address.municipality;
+                    else if (data.address.country) placeName = data.address.country;
+                    if (data.address.country && placeName !== data.address.country) placeName += `, ${data.address.country}`;
+                } else {
+                    placeName = data.display_name.split(',').slice(0,2).join(',');
+                }
+                document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
+            } catch {
+                document.getElementById('locationName').value = `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+            }
+        }
+
         async function setPosition(lat, lng) {
             if (!isValidCoordinates(lat, lng)) {
                 const t = translations[currentLang];
@@ -1065,204 +1032,357 @@
                 showValidationError('lng', true, t.lngError);
                 return;
             }
-            
             showValidationError('lat', false);
             showValidationError('lng', false);
-            
             document.getElementById('lat').value = lat.toFixed(6);
             document.getElementById('lng').value = lng.toFixed(6);
             marker.setLatLng([lat, lng]);
             map.panTo([lat, lng]);
-            
             await fetchLocationName(lat, lng);
             await fetchElevation(lat, lng);
-            
             updatePanorama();
         }
 
         function syncFromInputs() {
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
-            
             if (!isValidCoordinates(lat, lng)) {
                 const t = translations[currentLang];
                 showValidationError('lat', true, t.latError);
                 showValidationError('lng', true, t.lngError);
                 return;
             }
-            
             setPosition(lat, lng);
-        }
-
-        async function fetchElevation(lat, lng) {
-            try {
-                const response = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
-                const json = await response.json();
-                const elevation = Math.round(json.results[0].elevation);
-                document.getElementById('ele').value = elevation;
-            } catch (e) { 
-                console.error('Erreur lors de la récupération de l\'altitude:', e);
-                document.getElementById('ele').value = 0;
-            }
-        }
-
-        async function fetchLocationName(lat, lng) {
-            if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
-                const t = translations[currentLang];
-                document.getElementById('locationName').value = t.invalidPosition;
-                return;
-            }
-            
-            try {
-                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12&accept-language=${lang}`
-                );
-                
-                if (!response.ok) throw new Error('Erreur de réseau');
-                
-                const data = await response.json();
-                
-                if (data.display_name) {
-                    let placeName = currentLang === 'en' ? "Unnamed place" : 
-                                   currentLang === 'ar' ? "مكان غير مسمى" : 
-                                   "Lieu non nommé";
-                    
-                    if (data.address) {
-                        if (data.address.city) {
-                            placeName = data.address.city;
-                            if (data.address.country) placeName += `, ${data.address.country}`;
-                        } else if (data.address.town) {
-                            placeName = data.address.town;
-                            if (data.address.country) placeName += `, ${data.address.country}`;
-                        } else if (data.address.village) {
-                            placeName = data.address.village;
-                            if (data.address.country) placeName += `, ${data.address.country}`;
-                        } else if (data.address.municipality) {
-                            placeName = data.address.municipality;
-                            if (data.address.country) placeName += `, ${data.address.country}`;
-                        } else if (data.address.country) {
-                            placeName = data.address.country;
-                        } else {
-                            const parts = data.display_name.split(',');
-                            if (parts.length >= 2) {
-                                placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
-                            } else {
-                                placeName = data.display_name;
-                            }
-                        }
-                    } else {
-                        const parts = data.display_name.split(',');
-                        if (parts.length >= 2) {
-                            placeName = `${parts[0]}, ${parts[parts.length-1]}`.trim();
-                        } else {
-                            placeName = data.display_name;
-                        }
-                    }
-                    
-                    document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
-                } else {
-                    const positionText = currentLang === 'en' ? `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
-                                        currentLang === 'ar' ? `الموقع: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
-                                        `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
-                    document.getElementById('locationName').value = positionText;
-                }
-            } catch (error) {
-                console.error('Erreur lors de la récupération du nom du lieu:', error);
-                const positionText = currentLang === 'en' ? `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
-                                    currentLang === 'ar' ? `الموقع: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°` :
-                                    `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
-                document.getElementById('locationName').value = positionText;
-            }
         }
 
         function getUserLocation() {
             if (!navigator.geolocation) {
-                alert(currentLang === 'en' ? "Geolocation is not supported by your browser." :
-                      currentLang === 'ar' ? "المتصفح الخاص بك لا يدعم تحديد الموقع الجغرافي." :
-                      "La géolocalisation n'est pas supportée par votre navigateur.");
+                alert(translations[currentLang].latError); // simplifié
                 return;
             }
-            
-            const locationBtn = document.querySelector('.location-btn');
-            const originalText = locationBtn.textContent;
-            
-            const loadingText = currentLang === 'en' ? "⏳ Locating..." :
-                               currentLang === 'ar' ? "⏳ جاري تحديد الموقع..." :
-                               "⏳ Localisation en cours...";
-            
-            locationBtn.textContent = loadingText;
-            locationBtn.disabled = true;
-            
-            const searchingText = currentLang === 'en' ? "Searching for place name..." :
-                                 currentLang === 'ar' ? "جاري البحث عن اسم المكان..." :
-                                 "Recherche du nom du lieu...";
-            document.getElementById('locationName').value = searchingText;
-            
+            const btn = document.querySelector('.location-btn');
+            const orig = btn.textContent;
+            btn.textContent = "⏳...";
+            btn.disabled = true;
             navigator.geolocation.getCurrentPosition(
-                async function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    showValidationError('lat', false);
-                    showValidationError('lng', false);
-                    
-                    document.getElementById('lat').value = lat.toFixed(6);
-                    document.getElementById('lng').value = lng.toFixed(6);
-                    
-                    await fetchLocationName(lat, lng);
-                    await fetchElevation(lat, lng);
-                    
-                    setPosition(lat, lng);
-                    map.setView([lat, lng], 12);
-                    
-                    locationBtn.textContent = originalText;
-                    locationBtn.disabled = false;
+                async pos => {
+                    const { latitude, longitude } = pos.coords;
+                    document.getElementById('lat').value = latitude.toFixed(6);
+                    document.getElementById('lng').value = longitude.toFixed(6);
+                    await fetchLocationName(latitude, longitude);
+                    await fetchElevation(latitude, longitude);
+                    setPosition(latitude, longitude);
+                    map.setView([latitude, longitude], 12);
+                    btn.textContent = orig;
+                    btn.disabled = false;
                 },
-                function(error) {
-                    let errorMessage = currentLang === 'en' ? "Unable to get your location. " :
-                                      currentLang === 'ar' ? "تعذر الحصول على موقعك. " :
-                                      "Impossible d'obtenir votre position. ";
-                    
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage += currentLang === 'en' ? "Permission denied by user." :
-                                           currentLang === 'ar' ? "تم رفض الإذن من المستخدم." :
-                                           "Permission refusée par l'utilisateur.";
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage += currentLang === 'en' ? "Position unavailable." :
-                                           currentLang === 'ar' ? "الموقع غير متاح." :
-                                           "Position indisponible.";
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage += currentLang === 'en' ? "Location timeout." :
-                                           currentLang === 'ar' ? "انتهت مهلة تحديد الموقع." :
-                                           "Délai de localisation dépassé.";
-                            break;
-                        default:
-                            errorMessage += currentLang === 'en' ? "Unknown error." :
-                                           currentLang === 'ar' ? "خطأ غير معروف." :
-                                           "Erreur inconnue.";
-                    }
-                    
-                    alert(errorMessage);
-                    const notAvailableText = currentLang === 'en' ? "Position not available" :
-                                            currentLang === 'ar' ? "الموقع غير متاح" :
-                                            "Position non disponible";
-                    document.getElementById('locationName').value = notAvailableText;
-                    
-                    locationBtn.textContent = originalText;
-                    locationBtn.disabled = false;
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                err => {
+                    alert("Erreur de géolocalisation");
+                    btn.textContent = orig;
+                    btn.disabled = false;
                 }
             );
         }
 
+        // ==================== Fonctions de visibilité (ajustées à l'altitude) ====================
+        function adjustCriterionByElevation(baseValue, elevation, criterion) {
+            if (elevation <= 0) return baseValue;
+            let factor = 0;
+            switch(criterion) {
+                case 'yallop': factor = 0.5; break;
+                case 'saao':   factor = 0.4; break;
+                case 'odeh':   factor = 0.6; break;
+                case 'danjon': factor = 0.3; break;
+                default: return baseValue;
+            }
+            return criterion === 'saao' ? baseValue + (elevation/1000)*factor : baseValue - (elevation/1000)*factor;
+        }
+
+        function adjustedYallop(elong, moonAlt, elevation) {
+            const danger = adjustCriterionByElevation(7, elevation, 'yallop');
+            const success = adjustCriterionByElevation(10, elevation, 'yallop');
+            if (elong < danger || moonAlt < 3) return ["danger"];
+            if (elong > success && moonAlt > 5) return ["success"];
+            return ["warning"];
+        }
+
+        function adjustedSAAO(arcv, daz, q, elevation) {
+            const warn = adjustCriterionByElevation(0, elevation, 'saao');
+            const succ = adjustCriterionByElevation(0.5, elevation, 'saao');
+            if (q > succ) return ["success"];
+            if (q > warn) return ["warning"];
+            return ["danger"];
+        }
+
+        function adjustedOdeh(v, w, elevation) {
+            const d = adjustCriterionByElevation(-0.96, elevation, 'odeh');
+            const ww = adjustCriterionByElevation(2, elevation, 'odeh');
+            const s = adjustCriterionByElevation(5.65, elevation, 'odeh');
+            if (v >= s) return ["success2"];
+            if (v >= ww) return ["success1"];
+            if (v >= d) return ["warning"];
+            return ["danger"];
+        }
+
+        function adjustedDanjon(elong, elevation) {
+            const lim = adjustCriterionByElevation(7, elevation, 'danjon');
+            return elong < lim ? ["danger"] : ["warning"];
+        }
+
+        function getVisibilityText(status, criterion, lang) {
+            const t = translations[lang].visibilityResults;
+            if (criterion === 'yallop') {
+                if (status === 'danger') return t.yallop.danger;
+                if (status === 'warning') return t.yallop.warning;
+                return t.yallop.success;
+            } else if (criterion === 'saao') {
+                if (status === 'danger') return t.saao.danger;
+                if (status === 'warning') return t.saao.warning;
+                return t.saao.success;
+            } else if (criterion === 'odeh') {
+                if (status === 'danger') return t.odeh.danger;
+                if (status === 'warning') return t.odeh.warning;
+                if (status === 'success1') return t.odeh.success1;
+                return t.odeh.success2;
+            } else if (criterion === 'danjon') {
+                return status === 'danger' ? t.danjon.danger : t.danjon.warning;
+            }
+            return "N/A";
+        }
+
+        function elong(sun, moon) {
+            return Math.acos(Math.sin(sun.altitude)*Math.sin(moon.altitude) + Math.cos(sun.altitude)*Math.cos(moon.altitude)*Math.cos(sun.azimuth - moon.azimuth)) * 180/Math.PI;
+        }
+
+        function crescentVisibility(sun, moon, illum, criterion) {
+            const e = elong(sun, moon);
+            const altMoon = moon.altitude * 180/Math.PI;
+            const altSun = sun.altitude * 180/Math.PI;
+            const elev = parseFloat(document.getElementById('ele').value) || 0;
+            let status;
+            if (criterion === 'danjon') {
+                [status] = adjustedDanjon(e, elev);
+            } else if (criterion === 'yallop') {
+                [status] = adjustedYallop(e, altMoon, elev);
+            } else if (criterion === 'saao') {
+                const arcv = altMoon - altSun;
+                const daz = Math.abs((moon.azimuth - sun.azimuth) * 180/Math.PI);
+                const q = arcv - (5.22 - 0.0125*daz + 0.002*Math.pow(daz,2));
+                [status] = adjustedSAAO(arcv, daz, q, elev);
+            } else if (criterion === 'odeh') {
+                const sd = (MOON_RADIUS_KM / moon.distance) * (180/Math.PI) * 60;
+                const w = 2 * sd * illum.fraction;
+                const poly = -0.1018*Math.pow(w,3) + 0.7319*Math.pow(w,2) - 6.3226*w + 7.1651;
+                const v = (altMoon - altSun) - poly;
+                [status] = adjustedOdeh(v, w, elev);
+            } else return ["N/A", "warning"];
+            return [getVisibilityText(status, criterion, currentLang), status];
+        }
+
+        function estimateMoonBehindTerrain(moonAltDeg) {
+            if (moonAltDeg <= 0) return translations[currentLang].alreadyHidden;
+            if (moonAltDeg < 5) return translations[currentLang].nearHorizon;
+            return translations[currentLang].aboveHorizon;
+        }
+
+        // ==================== Mise à jour du panorama ====================
+        function updatePanorama() {
+            if (!isReady) return;
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            const ele = parseInt(document.getElementById('ele').value) || 0;
+            const dateStr = document.getElementById('date').value;
+            let d;
+            if (dateStr) {
+                const [y, m, day] = dateStr.split('-').map(Number);
+                d = new Date(Date.UTC(y, m-1, day, 12, 0, 0));
+            } else {
+                d = new Date();
+            }
+            if (!isValidCoordinates(lat, lng)) return;
+
+            const st = SunCalc.getTimes(d, lat, lng);
+            const mt = SunCalc.getMoonTimes(d, lat, lng);
+            const sunsetTime = st.sunset;
+            const sun = SunCalc.getPosition(sunsetTime, lat, lng);
+            const moon = SunCalc.getMoonPosition(sunsetTime, lat, lng);
+            const illum = SunCalc.getMoonIllumination(sunsetTime);
+            const [cresTxt, cresCls] = crescentVisibility(sun, moon, illum, document.getElementById('criterion').value);
+
+            const sunAz = (sun.azimuth * 180/Math.PI + 180) % 360;
+            const sunAlt = sun.altitude * 180/Math.PI;
+            const moonAz = (moon.azimuth * 180/Math.PI + 180) % 360;
+            const moonAlt = moon.altitude * 180/Math.PI;
+            const hidden = estimateMoonBehindTerrain(moonAlt);
+            const ageStr = getMoonAgeString(illum.phase);
+
+            document.getElementById('info').innerHTML = `
+                <h2>${translations[currentLang].infoTitle}</h2>
+                <div class="astro-grid">
+                    <div class="astro-section sun-section">
+                        <div class="astro-header"><div class="sun-icon">☀️</div><h3 style="margin:0;color:#f59e0b;">${translations[currentLang].sunTitle}</h3></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].sunsetLabel}</span><span class="info-value">${formatTime(sunsetTime, currentLang)}</span></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].azimuthLabel}</span><span class="info-value">${formatNumber(sunAz)}°</span></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].altitudeLabel}</span><span class="info-value">${formatNumber(sunAlt)}°</span></div>
+                    </div>
+                    <div class="astro-section moon-section">
+                        <div class="astro-header"><div class="moon-icon">🌙</div><h3 style="margin:0;color:#6b7280;">${translations[currentLang].moonTitle}</h3></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].moonsetLabel}</span><span class="info-value">${mt.set ? formatTime(mt.set, currentLang) : 'N/A'}</span></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].azimuthLabel}</span><span class="info-value">${formatNumber(moonAz)}°</span></div>
+                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].altitudeLabel}</span><span class="info-value">${formatNumber(moonAlt)}°</span></div>
+                    </div>
+                </div>
+                <div class="visibility-section">
+                    <div class="visibility-header"><div class="visibility-icon">🔭</div><h3 style="margin:0;color:#2563eb;">${translations[currentLang].visibilityTitle}</h3></div>
+                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].stateLabel}</span><span class="info-value">${hidden}</span></div>
+                    <div class="astro-info-item"><span class="info-label">🌙 ${translations[currentLang].moonAgeLabel}</span><span class="info-value">${ageStr}</span></div>
+                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
+                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
+                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
+                </div>`;
+
+            // PeakFinder
+            try {
+                panel.loadViewpoint(lat, lng, "Observation");
+                panel.elevationOffset(ele);
+                const sunsetUTC = new Date(sunsetTime.toISOString());
+                panel.astro.currentDateTime(sunsetUTC.getUTCFullYear(), sunsetUTC.getUTCMonth()+1, sunsetUTC.getUTCDate(), sunsetUTC.getUTCHours(), sunsetUTC.getUTCMinutes());
+                panel.azimut((moon.azimuth * 180/Math.PI + 180) % 360);
+                panel.fieldofview(60);
+                if (panel.redraw) panel.redraw();
+            } catch (e) { console.error(e); }
+        }
+
+        // ==================== Recherche de lieu ====================
+        async function searchLocation() {
+            const term = document.getElementById('locationSearch').value.trim();
+            if (!term) return;
+            const loading = document.getElementById('searchLoading');
+            const results = document.getElementById('searchResults');
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            results.innerHTML = '';
+            try {
+                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
+                const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(term)}&limit=5&accept-language=${lang}`);
+                const data = await resp.json();
+                if (data.length === 0) {
+                    results.innerHTML = `<div class="search-result-item">${translations[currentLang].searchLoading}</div>`;
+                } else {
+                    data.forEach(r => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.innerHTML = `<strong>${convertIndianToArabicNumbers(r.display_name.split(',').slice(0,2).join(','))}</strong><br><small>${r.lat}, ${r.lon}</small>`;
+                        div.addEventListener('click', () => {
+                            document.getElementById('lat').value = r.lat;
+                            document.getElementById('lng').value = r.lon;
+                            document.getElementById('locationSearch').value = r.display_name.split(',')[0];
+                            setPosition(parseFloat(r.lat), parseFloat(r.lon));
+                            results.style.display = 'none';
+                        });
+                        results.appendChild(div);
+                    });
+                }
+                results.style.display = 'block';
+            } catch (e) { console.error(e); } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // ==================== Langue et interface ====================
+        function updateTexts() {
+            const t = translations[currentLang];
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('positionTitle').textContent = t.positionTitle;
+            document.getElementById('searchLabel').textContent = t.searchLabel;
+            document.getElementById('locationSearch').placeholder = t.searchPlaceholder;
+            document.getElementById('locationBtn').textContent = t.locationBtn;
+            document.getElementById('locationName').placeholder = t.locationPlaceholder;
+            document.getElementById('latLabel').textContent = t.latLabel;
+            document.getElementById('lngLabel').textContent = t.lngLabel;
+            document.getElementById('eleLabel').textContent = t.eleLabel;
+            document.getElementById('mapTitle').textContent = t.mapTitle;
+            document.getElementById('mapBtnStandard').textContent = t.mapBtnStandard;
+            document.getElementById('mapBtnRelief').textContent = t.mapBtnRelief;
+            document.getElementById('mapBtnSatellite').textContent = t.mapBtnSatellite;
+            document.getElementById('dateTitle').textContent = t.dateTitle;
+            document.getElementById('dateLabel').textContent = t.dateLabel;
+            document.getElementById('criterionLabel').textContent = t.criterionLabel;
+            const sel = document.getElementById('criterion');
+            for (let opt of sel.options) {
+                if (t.criterionOptions[opt.value]) opt.textContent = t.criterionOptions[opt.value];
+            }
+            document.getElementById('updateBtn').textContent = t.updateBtn;
+            document.getElementById('infoTitle').textContent = t.infoTitle;
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
+            document.getElementById('searchLoading').textContent = t.searchLoading;
+            document.getElementById('localTimeLabel').textContent = t.localTimeLabel;
+            document.getElementById('utcTimeLabel').textContent = t.utcTimeLabel;
+            document.getElementById('dstLabel').textContent = t.dstLabel;
+        }
+
+        function updateLangSelector(lang) {
+            const flags = { fr: '🇫🇷', en: '🇬🇧', ar: '🇸🇦' };
+            const names = { fr: 'Français', en: 'English', ar: 'عربي' };
+            document.getElementById('currentLangFlag').textContent = flags[lang];
+            document.getElementById('currentLangText').textContent = names[lang];
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                opt.classList.remove('active');
+                if (opt.getAttribute('onclick') === `changeLanguage('${lang}')`) opt.classList.add('active');
+            });
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            updateTexts();
+            updateUsageSection();
+            updateLangSelector(lang);
+            // Gestion du copyright
+            document.querySelectorAll('.author-signature p:first-child span[lang]').forEach(s => s.style.display = 'none');
+            const cp = document.querySelector(`.author-signature p:first-child span[lang="${lang}"]`);
+            if (cp) cp.style.display = 'inline';
+            document.querySelectorAll('.author-signature p:last-child span[lang]').forEach(s => s.style.display = 'none');
+            const proj = document.querySelector(`.author-signature p:last-child span[lang="${lang}"]`);
+            if (proj) proj.style.display = 'inline';
+            if (isReady) updatePanorama();
+            localStorage.setItem('hilal-lang-preference', lang);
+        }
+
+        function toggleLangDropdown() {
+            document.getElementById('langDropdown').classList.toggle('show');
+        }
+
+        // ==================== Section d'utilisation ====================
+        function updateUsageSection() {
+            const t = translations[currentLang];
+            const tip = currentLang === 'en' ? 'Tip:' : currentLang === 'ar' ? 'نصيحة:' : 'Astuce :';
+            document.getElementById('usageNote').innerHTML = `
+                <h3>${t.usageTitle}</h3>
+                <div class="usage-steps">
+                    <div class="usage-step"><h4><span class="step-number">1</span> ${t.step1Title}</h4><p>${t.step1Desc}</p></div>
+                    <div class="usage-step"><h4><span class="step-number">2</span> ${t.step2Title}</h4><p>${t.step2Desc}</p></div>
+                    <div class="usage-step"><h4><span class="step-number">3</span> ${t.step3Title}</h4><p>${t.step3Desc}</p></div>
+                    <div class="usage-step"><h4><span class="step-number">4</span> ${t.step4Title}</h4><p>${t.step4Desc}</p></div>
+                </div>
+                <p><strong>${tip}</strong> ${t.usageTip}</p>
+            `;
+        }
+
+        // ==================== Options de temps ====================
+        function changeTimeMode(mode) {
+            timeDisplayMode = mode;
+            document.getElementById('dstOption').style.display = mode === 'local' ? 'flex' : 'none';
+            if (isReady) updatePanorama();
+        }
+
+        function toggleDST() {
+            dstEnabled = document.getElementById('dstCheckbox').checked;
+            if (isReady) updatePanorama();
+        }
+
+        // ==================== PeakFinder ====================
         function initPeakFinder() {
             panel = new PeakFinder.PanoramaPanel({ canvasid: "pfcanvas", locale: "fr" });
             panel.init(() => {
@@ -1275,449 +1395,32 @@
             });
         }
 
-        function elong(sun, moon) {
-            return Math.acos(Math.sin(sun.altitude) * Math.sin(moon.altitude) + Math.cos(sun.altitude) * Math.cos(moon.altitude) * Math.cos(sun.azimuth - moon.azimuth)) * 180 / Math.PI;
-        }
-
-        function crescentVisibility(sun, moon, illum, criterion) {
-            const e = elong(sun, moon);
-            const altMoon = moon.altitude * 180 / Math.PI;
-            const altSun = sun.altitude * 180 / Math.PI;
-            const lang = currentLang;
-            const elevation = parseFloat(document.getElementById('ele').value) || 0;
-            
-            if (criterion === "danjon") {
-                const [status] = adjustedDanjon(e, elevation);
-                return [getVisibilityText(status, criterion, lang), status];
-            }
-            
-            if (criterion === "yallop") {
-                const [status] = adjustedYallop(e, altMoon, elevation);
-                return [getVisibilityText(status, criterion, lang), status];
-            }
-            
-            if (criterion === "saao") {
-                const arcv = altMoon - altSun;
-                const daz = Math.abs((moon.azimuth - sun.azimuth) * 180 / Math.PI);
-                const q = arcv - (5.22 - 0.0125 * daz + 0.002 * Math.pow(daz, 2));
-                const [status] = adjustedSAAO(arcv, daz, q, elevation);
-                return [getVisibilityText(status, criterion, lang), status];
-            }
-            
-            if (criterion === "odeh") {
-                const sd = (MOON_RADIUS_KM / moon.distance) * (180 / Math.PI) * 60;
-                const w = 2 * sd * illum.fraction;
-                const poly = -0.1018 * Math.pow(w, 3) + 0.7319 * Math.pow(w, 2) - 6.3226 * w + 7.1651;
-                const v = (altMoon - altSun) - poly;
-                const [status] = adjustedOdeh(v, w, elevation);
-                return [getVisibilityText(status, criterion, lang), status];
-            }
-            
-            return ["N/A", "warning"];
-        }
-
-        function estimateMoonBehindTerrain(moonAltitudeDeg) {
-            if (moonAltitudeDeg <= 0) {
-                return translations[currentLang].alreadyHidden;
-            }
-            if (moonAltitudeDeg < 5) {
-                return translations[currentLang].nearHorizon;
-            }
-            return translations[currentLang].aboveHorizon;
-        }
-
-        function updatePanorama() {
-            if (!isReady) return;
-            
-            const lat = parseFloat(document.getElementById('lat').value);
-            const lng = parseFloat(document.getElementById('lng').value);
-            const ele = parseInt(document.getElementById('ele').value) || 0;
-            const d = new Date(document.getElementById('date').value || Date.now());
-            
-            if (!isValidCoordinates(lat, lng)) {
-                return;
-            }
-            
-            const st = SunCalc.getTimes(d, lat, lng);
-            const mt = SunCalc.getMoonTimes(d, lat, lng);
-            const sunsetTime = st.sunset;
-            
-            const sun = SunCalc.getPosition(sunsetTime, lat, lng);
-            const moon = SunCalc.getMoonPosition(sunsetTime, lat, lng);
-            const illum = SunCalc.getMoonIllumination(sunsetTime);
-            const [cresTxt, cresCls] = crescentVisibility(sun, moon, illum, document.getElementById('criterion').value);
-
-            const sunAzimuthDeg = (sun.azimuth * 180 / Math.PI + 180) % 360;
-            const sunAltitudeDeg = sun.altitude * 180 / Math.PI;
-            const moonAzimuthDeg = (moon.azimuth * 180 / Math.PI + 180) % 360;
-            const moonAltitudeDeg = moon.altitude * 180 / Math.PI;
-            
-            const moonHiddenStatus = estimateMoonBehindTerrain(moonAltitudeDeg);
-            const elevation = parseFloat(document.getElementById('ele').value) || 0;
-            const atmTransparency = getAtmosphericTransparency(elevation);
-            
-            document.getElementById('info').innerHTML = `
-                <h2>${translations[currentLang].infoTitle}</h2>
-                <div class="astro-grid">
-                    <div class="astro-section sun-section">
-                        <div class="astro-header">
-                            <div class="sun-icon">☀️</div>
-                            <h3 style="margin: 0; color: #f59e0b;">${translations[currentLang].sunTitle}</h3>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].sunsetLabel}</span>
-                            <span class="info-value">${formatTime(sunsetTime, currentLang)}</span>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].azimuthLabel}</span>
-                            <span class="info-value">${formatNumber(sunAzimuthDeg)}° ${currentLang === 'en' ? '' : currentLang === 'ar' ? '' : ''}</span>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].altitudeLabel}</span>
-                            <span class="info-value">${formatNumber(sunAltitudeDeg)}°</span>
-                        </div>
-                    </div>
-                    
-                    <div class="astro-section moon-section">
-                        <div class="astro-header">
-                            <div class="moon-icon">🌙</div>
-                            <h3 style="margin: 0; color: #6b7280;">${translations[currentLang].moonTitle}</h3>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].moonsetLabel}</span>
-                            <span class="info-value">${mt.set ? formatTime(mt.set, currentLang) : 'N/A'}</span>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].azimuthLabel}</span>
-                            <span class="info-value">${formatNumber(moonAzimuthDeg)}° ${currentLang === 'en' ? '' : currentLang === 'ar' ? '' : ''}</span>
-                        </div>
-                        <div class="astro-info-item">
-                            <span class="info-label">${translations[currentLang].altitudeLabel}</span>
-                            <span class="info-value">${formatNumber(moonAltitudeDeg)}°</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="visibility-section">
-                    <div class="visibility-header">
-                        <div class="visibility-icon">🔭</div>
-                        <h3 style="margin: 0; color: #2563eb;">${translations[currentLang].visibilityTitle}</h3>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">${translations[currentLang].stateLabel}</span>
-                        <span class="info-value">${moonHiddenStatus}</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">🏔️ ${currentLang === 'fr' ? 'Altitude:' : currentLang === 'ar' ? 'الارتفاع:' : 'Elevation:'}</span>
-                        <span class="info-value">${formatNumber(elevation)} m</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">🔆 ${currentLang === 'fr' ? 'Transparence:' : currentLang === 'ar' ? 'الشفافية:' : 'Transparency:'}</span>
-                        <span class="info-value">${formatNumber(atmTransparency * 100)}%</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">✨ ${currentLang === 'fr' ? 'Amélioration:' : currentLang === 'ar' ? 'التحسين:' : 'Improvement:'}</span>
-                        <span class="info-value">+${formatNumber((atmTransparency - 1) * 100)}%</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">${translations[currentLang].illuminationLabel}</span>
-                        <span class="info-value">${formatNumber(illum.fraction * 100)}%</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">${translations[currentLang].elongationLabel}</span>
-                        <span class="info-value">${formatNumber(elong(sun, moon))}°</span>
-                    </div>
-                    <div class="astro-info-item">
-                        <span class="info-label">${translations[currentLang].crescentLabel}</span>
-                        <span class="info-value"><span class="${cresCls}">${cresTxt}</span></span>
-                    </div>
-                </div>`;
-
-            try {
-                panel.loadViewpoint(lat, lng, "Observation");
-                panel.elevationOffset(ele);
-                
-                const sunsetUTC = new Date(sunsetTime.toISOString());
-                
-                panel.astro.currentDateTime(
-                    sunsetUTC.getUTCFullYear(),
-                    sunsetUTC.getUTCMonth() + 1,
-                    sunsetUTC.getUTCDate(),
-                    sunsetUTC.getUTCHours(),
-                    sunsetUTC.getUTCMinutes()
-                );
-                
-                const moonAzimuthDegForPanorama = (moon.azimuth * 180 / Math.PI + 180) % 360;
-                panel.azimut(moonAzimuthDegForPanorama);
-                panel.fieldofview(60);
-                
-                if (typeof panel.redraw === 'function') {
-                    panel.redraw();
-                }
-            } catch (e) { 
-                console.error('Erreur Panorama:', e);
-            }
-        }
-
-        async function searchLocation() {
-            const searchInput = document.getElementById('locationSearch');
-            const searchTerm = searchInput.value.trim();
-            
-            if (!searchTerm) return;
-            
-            const searchLoading = document.getElementById('searchLoading');
-            const searchResults = document.getElementById('searchResults');
-            
-            searchLoading.style.display = 'block';
-            searchResults.style.display = 'none';
-            searchResults.innerHTML = '';
-            
-            try {
-                const lang = currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en' : 'fr';
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&accept-language=${lang}`
-                );
-                
-                if (!response.ok) throw new Error('Erreur de réseau');
-                
-                const results = await response.json();
-                
-                if (results.length === 0) {
-                    const noResultsText = currentLang === 'en' ? 'No results found' :
-                                         currentLang === 'ar' ? 'لم يتم العثور على نتائج' :
-                                         'Aucun résultat trouvé';
-                    searchResults.innerHTML = `<div class="search-result-item">${noResultsText}</div>`;
-                } else {
-                    results.forEach(result => {
-                        const item = document.createElement('div');
-                        item.className = 'search-result-item';
-                        
-                        const latLabel = currentLang === 'en' ? 'Lat' : currentLang === 'ar' ? 'عرض' : 'Lat';
-                        const lngLabel = currentLang === 'en' ? 'Lng' : currentLang === 'ar' ? 'طول' : 'Lng';
-                        
-                        item.innerHTML = `
-                            <strong>${convertIndianToArabicNumbers(result.display_name.split(',').slice(0, 2).join(','))}</strong><br>
-                            <small>${latLabel}: ${result.lat}, ${lngLabel}: ${result.lon}</small>
-                        `;
-                        
-                        item.addEventListener('click', () => {
-                            const lat = parseFloat(result.lat);
-                            const lng = parseFloat(result.lon);
-                            
-                            showValidationError('lat', false);
-                            showValidationError('lng', false);
-                            
-                            document.getElementById('lat').value = lat.toFixed(6);
-                            document.getElementById('lng').value = lng.toFixed(6);
-                            searchInput.value = convertIndianToArabicNumbers(result.display_name.split(',')[0]);
-                            
-                            const placeName = result.display_name.split(',').slice(0, 2).join(',');
-                            document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
-                            
-                            searchResults.style.display = 'none';
-                            
-                            setPosition(lat, lng);
-                        });
-                        
-                        searchResults.appendChild(item);
-                    });
-                }
-                
-                searchResults.style.display = 'block';
-            } catch (error) {
-                console.error('Erreur de recherche:', error);
-                const errorText = currentLang === 'en' ? 'Error during search' :
-                                 currentLang === 'ar' ? 'خطأ أثناء البحث' :
-                                 'Erreur lors de la recherche';
-                searchResults.innerHTML = `<div class="search-result-item">${errorText}</div>`;
-                searchResults.style.display = 'block';
-            } finally {
-                searchLoading.style.display = 'none';
-            }
-        }
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            
-            if (lang === 'ar') {
-                document.body.dir = 'rtl';
-                document.body.style.textAlign = 'right';
-                
-                // Afficher/masquer les textes de copyright
-                document.querySelectorAll('p span[lang="fr"], p span[lang="en"], p span[lang="ar"]').forEach(el => {
-                    el.style.display = 'none';
-                });
-                const arCopyright = document.querySelector('p span[lang="ar"]');
-                if (arCopyright) arCopyright.style.display = 'inline';
-            } else {
-                document.body.dir = 'ltr';
-                document.body.style.textAlign = 'left';
-                
-                // Afficher/masquer les textes de copyright
-                document.querySelectorAll('p span[lang="fr"], p span[lang="en"], p span[lang="ar"]').forEach(el => {
-                    el.style.display = 'none';
-                });
-                const frCopyright = document.querySelector('p span[lang="fr"]');
-                const enCopyright = document.querySelector('p span[lang="en"]');
-                if (lang === 'fr' && frCopyright) frCopyright.style.display = 'inline';
-                if (lang === 'en' && enCopyright) enCopyright.style.display = 'inline';
-            }
-            
-            updateTexts();
-            updateUsageSection();
-            updateLangSelector(lang);
-            
-            if (isReady) {
-                updatePanorama();
-            }
-            
-            document.getElementById('langDropdown').classList.remove('show');
-            localStorage.setItem('hilal-lang-preference', lang);
-        }
-
-        function updateTexts() {
-            const t = translations[currentLang];
-            
-            document.getElementById('pageTitle').textContent = t.pageTitle;
-            document.getElementById('positionTitle').textContent = t.positionTitle;
-            document.getElementById('searchLabel').textContent = t.searchLabel;
-            document.getElementById('locationSearch').placeholder = t.searchPlaceholder;
-            document.getElementById('locationBtn').textContent = t.locationBtn;
-            document.getElementById('locationName').placeholder = t.locationPlaceholder;
-            document.getElementById('latLabel').textContent = t.latLabel;
-            document.getElementById('lngLabel').textContent = t.lngLabel;
-            document.getElementById('eleLabel').textContent = t.eleLabel;
-            
-            document.getElementById('latError').textContent = t.latError;
-            document.getElementById('lngError').textContent = t.lngError;
-            
-            document.getElementById('mapTitle').textContent = t.mapTitle;
-            document.getElementById('mapBtnStandard').textContent = t.mapBtnStandard;
-            document.getElementById('mapBtnRelief').textContent = t.mapBtnRelief;
-            document.getElementById('mapBtnSatellite').textContent = t.mapBtnSatellite;
-            
-            document.getElementById('dateTitle').textContent = t.dateTitle;
-            document.getElementById('dateLabel').textContent = t.dateLabel;
-            document.getElementById('criterionLabel').textContent = t.criterionLabel;
-            
-            const criterionSelect = document.getElementById('criterion');
-            Array.from(criterionSelect.options).forEach(option => {
-                const value = option.value;
-                if (t.criterionOptions[value]) {
-                    option.textContent = t.criterionOptions[value];
-                }
-            });
-            
-            document.getElementById('updateBtn').textContent = t.updateBtn;
-            document.getElementById('infoTitle').textContent = t.infoTitle;
-            document.getElementById('loadingText').textContent = t.loadingText;
-            document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
-            document.getElementById('searchLoading').textContent = t.searchLoading;
-            
-            // Mettre à jour les titres de la signature
-            const authorFr = document.querySelector('.author-signature div:first-child span:nth-child(2)');
-            const authorAr = document.querySelector('.author-signature div:nth-child(2) span:nth-child(2)');
-            
-            // Les noms restent inchangés (Drif Ilyes / ظريف إلياس)
-            // Mise à jour des textes de projet dans la signature
-            const projectSpan = document.querySelectorAll('.author-signature p:last-child span:last-child');
-            projectSpan.forEach(span => {
-                if (span.hasAttribute('lang')) {
-                    span.style.display = 'none';
-                }
-            });
-            
-            const currentProjectSpan = document.querySelector(`.author-signature p:last-child span[lang="${currentLang}"]`);
-            if (currentProjectSpan) {
-                currentProjectSpan.style.display = 'inline';
-            }
-        }
-
-        function updateLangSelector(lang) {
-            const langTexts = {
-                'fr': 'Français',
-                'en': 'English',
-                'ar': 'عربي'
-            };
-            
-            const langFlags = {
-                'fr': '🇫🇷',
-                'en': '🇬🇧',
-                'ar': '🇸🇦'
-            };
-            
-            document.getElementById('currentLangText').textContent = langTexts[lang];
-            document.getElementById('currentLangFlag').textContent = langFlags[lang];
-            
-            document.querySelectorAll('.lang-option').forEach(option => {
-                option.classList.remove('active');
-                if (option.getAttribute('onclick') === `changeLanguage('${lang}')`) {
-                    option.classList.add('active');
-                }
-            });
-        }
-
-        function toggleLangDropdown() {
-            document.getElementById('langDropdown').classList.toggle('show');
-        }
-
+        // ==================== Event listeners ====================
         document.addEventListener('click', function(e) {
-            const langDropdown = document.getElementById('langDropdown');
-            const langBtn = document.querySelector('.lang-dropdown-btn');
-            
-            if (!langDropdown.contains(e.target) && !langBtn.contains(e.target)) {
-                langDropdown.classList.remove('show');
-            }
+            const dd = document.getElementById('langDropdown');
+            const btn = document.querySelector('.lang-dropdown-btn');
+            if (!dd.contains(e.target) && !btn.contains(e.target)) dd.classList.remove('show');
         });
 
-        document.getElementById('locationSearch').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchLocation();
-            }
-        });
-
+        document.getElementById('locationSearch').addEventListener('keypress', e => { if (e.key === 'Enter') searchLocation(); });
         document.getElementById('lat').addEventListener('change', function() {
             const lat = parseFloat(this.value);
-            const t = translations[currentLang];
-            
-            if (isNaN(lat) || lat < -90 || lat > 90) {
-                showValidationError('lat', true, t.latError);
-            } else {
-                showValidationError('lat', false);
-                const lng = parseFloat(document.getElementById('lng').value);
-                if (!isNaN(lng)) {
-                    fetchLocationName(lat, lng);
-                }
-            }
+            if (isNaN(lat) || lat < -90 || lat > 90) showValidationError('lat', true, translations[currentLang].latError);
+            else { showValidationError('lat', false); fetchLocationName(lat, parseFloat(document.getElementById('lng').value)); }
         });
-
         document.getElementById('lng').addEventListener('change', function() {
             const lng = parseFloat(this.value);
-            const t = translations[currentLang];
-            
-            if (isNaN(lng) || lng < -180 || lng > 180) {
-                showValidationError('lng', true, t.lngError);
-            } else {
-                showValidationError('lng', false);
-                const lat = parseFloat(document.getElementById('lat').value);
-                if (!isNaN(lat)) {
-                    fetchLocationName(lat, lng);
-                }
-            }
+            if (isNaN(lng) || lng < -180 || lng > 180) showValidationError('lng', true, translations[currentLang].lngError);
+            else { showValidationError('lng', false); fetchLocationName(parseFloat(document.getElementById('lat').value), lng); }
         });
 
         window.onload = async () => {
             document.getElementById('date').valueAsDate = new Date();
             initMap();
             initPeakFinder();
-            
-            const savedLang = localStorage.getItem('hilal-lang-preference');
-            if (savedLang && (savedLang === 'fr' || savedLang === 'en' || savedLang === 'ar')) {
-                changeLanguage(savedLang);
-            } else {
-                changeLanguage('fr');
-            }
-            
+            const saved = localStorage.getItem('hilal-lang-preference');
+            if (saved && ['fr','en','ar'].includes(saved)) changeLanguage(saved);
+            else changeLanguage('fr');
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
             await fetchLocationName(lat, lng);
