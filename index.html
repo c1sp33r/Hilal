@@ -517,31 +517,9 @@
             </div>
         </div>
         
-        <!-- Quatrième carte : Informations Astronomiques avec options de temps -->
+        <!-- Quatrième carte : Informations Astronomiques (le contenu sera généré dynamiquement) -->
         <div class="card" id="info">
             <h2 id="infoTitle">4. Informations Astronomiques</h2>
-            
-            <!-- Options de temps -->
-            <div class="time-options">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span style="font-weight: 600;">⏰</span>
-                    <label>
-                        <input type="radio" name="timeMode" value="local" checked onchange="changeTimeMode('local')"> 
-                        <span id="localTimeLabel">محلي</span>
-                    </label>
-                    <label>
-                        <input type="radio" name="timeMode" value="utc" onchange="changeTimeMode('utc')"> 
-                        <span id="utcTimeLabel">UTC</span>
-                    </label>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;" id="dstOption">
-                    <label>
-                        <input type="checkbox" id="dstCheckbox" onchange="toggleDST()"> 
-                        <span id="dstLabel">التوقيت الصيفي (DST)</span>
-                    </label>
-                </div>
-            </div>
-            
             <p id="loadingText">Chargement des données...</p>
         </div>
         
@@ -565,7 +543,7 @@
                 <!-- Français -->
                 <div style="font-family: 'system-ui', sans-serif;">
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Website Designer:</span>
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Designer:</span>
                         <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
                     </div>
                     <div style="font-size: 0.9em; color: #4b5563;">
@@ -716,7 +694,11 @@
                 localTimeLabel: "Local",
                 utcTimeLabel: "UTC",
                 dstLabel: "Heure d'été (DST)",
-                moonAgeLabel: "Âge de la Lune"
+                moonAgeLabel: "Âge de la Lune",
+                hour: "heure",
+                hours: "heures",
+                day: "jour",
+                days: "jours"
             },
             en: {
                 pageTitle: "Lunar Crescent Observation (Hilal)",
@@ -800,7 +782,11 @@
                 localTimeLabel: "Local",
                 utcTimeLabel: "UTC",
                 dstLabel: "Daylight Saving Time (DST)",
-                moonAgeLabel: "Moon Age"
+                moonAgeLabel: "Moon Age",
+                hour: "hour",
+                hours: "hours",
+                day: "day",
+                days: "days"
             },
             ar: {
                 pageTitle: "رصد الهلال",
@@ -884,7 +870,11 @@
                 localTimeLabel: "محلي",
                 utcTimeLabel: "UTC",
                 dstLabel: "التوقيت الصيفي",
-                moonAgeLabel: "عمر القمر"
+                moonAgeLabel: "عمر القمر",
+                hour: "ساعة",
+                hours: "ساعات",
+                day: "يوم",
+                days: "أيام"
             }
         };
 
@@ -926,14 +916,15 @@
         }
 
         // ==================== Âge de la Lune ====================
-        function getMoonAgeString(phase) {
+        function getMoonAgeString(phase, lang) {
             const ageDays = phase * SYNODIC_MONTH_DAYS;
+            const t = translations[lang];
             if (ageDays < 1) {
                 const hours = Math.round(ageDays * 24);
-                return `${hours} heure${hours > 1 ? 's' : ''}`;
+                return `${hours} ${hours > 1 ? t.hours : t.hour}`;
             } else {
                 const days = ageDays.toFixed(1);
-                return `${days} jour${days > 1 ? 's' : ''}`;
+                return `${days} ${days > 1 ? t.days : t.day}`;
             }
         }
 
@@ -1185,7 +1176,7 @@
             return translations[currentLang].aboveHorizon;
         }
 
-        // ==================== Mise à jour du panorama ====================
+        // ==================== Mise à jour du panorama et des infos ====================
         function updatePanorama() {
             if (!isReady) return;
             const lat = parseFloat(document.getElementById('lat').value);
@@ -1214,10 +1205,30 @@
             const moonAz = (moon.azimuth * 180/Math.PI + 180) % 360;
             const moonAlt = moon.altitude * 180/Math.PI;
             const hidden = estimateMoonBehindTerrain(moonAlt);
-            const ageStr = getMoonAgeString(illum.phase);
+            const ageStr = getMoonAgeString(illum.phase, currentLang);
 
+            // Construction complète du HTML de #info avec les options de temps
             document.getElementById('info').innerHTML = `
-                <h2>${translations[currentLang].infoTitle}</h2>
+                <h2 id="infoTitle">${translations[currentLang].infoTitle}</h2>
+                <div class="time-options">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-weight: 600;">⏰</span>
+                        <label>
+                            <input type="radio" name="timeMode" value="local" ${timeDisplayMode === 'local' ? 'checked' : ''} onchange="changeTimeMode('local')"> 
+                            <span id="localTimeLabel">${translations[currentLang].localTimeLabel}</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="timeMode" value="utc" ${timeDisplayMode === 'utc' ? 'checked' : ''} onchange="changeTimeMode('utc')"> 
+                            <span id="utcTimeLabel">${translations[currentLang].utcTimeLabel}</span>
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;" id="dstOption" ${timeDisplayMode === 'local' ? '' : 'style="display:none;"'}>
+                        <label>
+                            <input type="checkbox" id="dstCheckbox" ${dstEnabled ? 'checked' : ''} onchange="toggleDST()"> 
+                            <span id="dstLabel">${translations[currentLang].dstLabel}</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="astro-grid">
                     <div class="astro-section sun-section">
                         <div class="astro-header"><div class="sun-icon">☀️</div><h3 style="margin:0;color:#f59e0b;">${translations[currentLang].sunTitle}</h3></div>
@@ -1239,7 +1250,8 @@
                     <div class="astro-info-item"><span class="info-label">${translations[currentLang].illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
                     <div class="astro-info-item"><span class="info-label">${translations[currentLang].elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
                     <div class="astro-info-item"><span class="info-label">${translations[currentLang].crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
-                </div>`;
+                </div>
+            `;
 
             // PeakFinder
             try {
@@ -1317,9 +1329,7 @@
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
             document.getElementById('searchLoading').textContent = t.searchLoading;
-            document.getElementById('localTimeLabel').textContent = t.localTimeLabel;
-            document.getElementById('utcTimeLabel').textContent = t.utcTimeLabel;
-            document.getElementById('dstLabel').textContent = t.dstLabel;
+            // Pas besoin de mettre à jour localTimeLabel etc ici car ils sont dans le HTML reconstruit
         }
 
         function updateLangSelector(lang) {
@@ -1373,7 +1383,7 @@
         // ==================== Options de temps ====================
         function changeTimeMode(mode) {
             timeDisplayMode = mode;
-            document.getElementById('dstOption').style.display = mode === 'local' ? 'flex' : 'none';
+            // On met à jour l'affichage du DST et on rafraîchit
             if (isReady) updatePanorama();
         }
 
