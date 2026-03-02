@@ -428,6 +428,11 @@
             font-weight: normal;
             margin: 0;
         }
+        .time-options input:disabled {
+            background: #e5e7eb;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
@@ -468,7 +473,7 @@
                 <h2 id="positionTitle">1. Position</h2>
                 
                 <label for="locationSearch" id="searchLabel">Rechercher un lieu :</label>
-                <input type="text" id="locationSearch" placeholder="Ex: Paris, France (Appuyez sur Entrée)" autocomplete="off">
+                <input type="text" id="locationSearch" placeholder="Ex: Paris, France" autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
                 <div id="searchLoading" class="search-loading">Recherche en cours...</div>
                 
@@ -598,6 +603,7 @@
     <script>
         // ==================== Variables globales ====================
         let map, marker, panel, isReady = false;
+        let searchTimeout = null; // pour le debounce de la recherche
         const MOON_RADIUS_KM = 1737.4;
         const SYNODIC_MONTH_DAYS = 29.530588; // Mois lunaire moyen
         const layers = {
@@ -607,8 +613,9 @@
         };
 
         // Paramètres d'affichage du temps
-        let timeDisplayMode = 'local'; // 'local' ou 'utc'
-        let dstEnabled = false; // Heure d'été (appliqué seulement au mode local)
+        let timeDisplayMode = 'utc'; // 'utc' ou 'offset'
+        let offsetHours = 0; // décalage manuel en heures (pour le mode offset)
+        let dstEnabled = false; // Heure d'été (appliqué seulement au mode offset)
 
         // ==================== Traductions ====================
         const translations = {
@@ -616,7 +623,7 @@
                 pageTitle: "Observation du Croissant Lunaire (Hilal)",
                 positionTitle: "1. Position",
                 searchLabel: "Rechercher un lieu :",
-                searchPlaceholder: "Ex: Paris, France (Appuyez sur Entrée)",
+                searchPlaceholder: "Ex: Paris, France",
                 locationBtn: "📍 Ma Position Actuelle",
                 locationPlaceholder: "Nom du lieu (sera rempli automatiquement)",
                 latLabel: "Latitude",
@@ -691,8 +698,9 @@
                 latError: "La latitude doit être entre -90° et 90°",
                 lngError: "La longitude doit être entre -180° et 180°",
                 invalidPosition: "Position invalide",
-                localTimeLabel: "Local",
-                utcTimeLabel: "UTC",
+                utcLabel: "UTC (GMT)",
+                offsetLabel: "Décalage",
+                offsetInputLabel: "Décalage (heures) :",
                 dstLabel: "Heure d'été (DST)",
                 moonAgeLabel: "Âge de la Lune",
                 hour: "heure",
@@ -704,7 +712,7 @@
                 pageTitle: "Lunar Crescent Observation (Hilal)",
                 positionTitle: "1. Position",
                 searchLabel: "Search for a place:",
-                searchPlaceholder: "Ex: Paris, France (Press Enter)",
+                searchPlaceholder: "Ex: Paris, France",
                 locationBtn: "📍 My Current Location",
                 locationPlaceholder: "Place name (will be filled automatically)",
                 latLabel: "Latitude",
@@ -779,8 +787,9 @@
                 latError: "Latitude must be between -90° and 90°",
                 lngError: "Longitude must be between -180° and 180°",
                 invalidPosition: "Invalid position",
-                localTimeLabel: "Local",
-                utcTimeLabel: "UTC",
+                utcLabel: "UTC (GMT)",
+                offsetLabel: "Offset",
+                offsetInputLabel: "Offset (hours):",
                 dstLabel: "Daylight Saving Time (DST)",
                 moonAgeLabel: "Moon Age",
                 hour: "hour",
@@ -792,7 +801,7 @@
                 pageTitle: "رصد الهلال",
                 positionTitle: "١. الموقع",
                 searchLabel: "البحث عن مكان:",
-                searchPlaceholder: "مثال: باريس، فرنسا (اضغط Enter)",
+                searchPlaceholder: "مثال: باريس، فرنسا",
                 locationBtn: "📍 موقعي الحالي",
                 locationPlaceholder: "اسم المكان (سيتم ملؤه تلقائياً)",
                 latLabel: "خط العرض",
@@ -867,8 +876,9 @@
                 latError: "يجب أن يكون خط العرض بين ٩٠° و ٩٠°-",
                 lngError: "يجب أن يكون خط الطول بين ١٨٠° و ١٨٠°-",
                 invalidPosition: "موقع غير صالح",
-                localTimeLabel: "محلي",
-                utcTimeLabel: "UTC",
+                utcLabel: "UTC (GMT)",
+                offsetLabel: "توقيت يدوي",
+                offsetInputLabel: "التوقيت اليدوي (ساعات):",
                 dstLabel: "التوقيت الصيفي",
                 moonAgeLabel: "عمر القمر",
                 hour: "ساعة",
@@ -881,25 +891,26 @@
         let currentLang = 'fr';
 
         // ==================== Fonctions de temps ====================
-        function getTimeZoneOffsetMinutes(lng) {
-            // 15° = 60 minutes, arrondi à 15 min près
-            return Math.round(lng / 15) * 60;
+        function getDisplayOffsetMinutes() {
+            if (timeDisplayMode === 'utc') return 0;
+            let offset = offsetHours * 60;
+            if (dstEnabled) offset += 60;
+            return offset;
         }
 
-        function utcToLocalTime(date, lng, dst) {
-            const offsetMinutes = getTimeZoneOffsetMinutes(lng) + (dst ? 60 : 0);
+        function utcToLocalTime(date) {
+            const offsetMinutes = getDisplayOffsetMinutes();
             return new Date(date.getTime() + offsetMinutes * 60 * 1000);
         }
 
-        function formatTime(date, lang, mode = timeDisplayMode, dst = dstEnabled) {
+        function formatTime(date, lang, mode = timeDisplayMode) {
             if (!date) return 'N/A';
             
             let displayDate;
             if (mode === 'utc') {
                 displayDate = date; // UTC
             } else {
-                const lng = parseFloat(document.getElementById('lng').value) || 0;
-                displayDate = utcToLocalTime(date, lng, dst);
+                displayDate = utcToLocalTime(date);
             }
             
             // Pour éviter les décalages, on affiche en UTC après conversion manuelle
@@ -1206,50 +1217,59 @@
             const moonAlt = moon.altitude * 180/Math.PI;
             const hidden = estimateMoonBehindTerrain(moonAlt);
             const ageStr = getMoonAgeString(illum.phase, currentLang);
+            const t = translations[currentLang];
 
             // Construction complète du HTML de #info avec les options de temps
-            document.getElementById('info').innerHTML = `
-                <h2 id="infoTitle">${translations[currentLang].infoTitle}</h2>
+            const timeOptionsHtml = `
                 <div class="time-options">
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <span style="font-weight: 600;">⏰</span>
                         <label>
-                            <input type="radio" name="timeMode" value="local" ${timeDisplayMode === 'local' ? 'checked' : ''} onchange="changeTimeMode('local')"> 
-                            <span id="localTimeLabel">${translations[currentLang].localTimeLabel}</span>
+                            <input type="radio" name="timeMode" value="utc" ${timeDisplayMode === 'utc' ? 'checked' : ''} onchange="changeTimeMode('utc')"> 
+                            <span>${t.utcLabel}</span>
                         </label>
                         <label>
-                            <input type="radio" name="timeMode" value="utc" ${timeDisplayMode === 'utc' ? 'checked' : ''} onchange="changeTimeMode('utc')"> 
-                            <span id="utcTimeLabel">${translations[currentLang].utcTimeLabel}</span>
+                            <input type="radio" name="timeMode" value="offset" ${timeDisplayMode === 'offset' ? 'checked' : ''} onchange="changeTimeMode('offset')"> 
+                            <span>${t.offsetLabel}</span>
                         </label>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: center;" id="dstOption" ${timeDisplayMode === 'local' ? '' : 'style="display:none;"'}>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;" id="offsetControls">
                         <label>
-                            <input type="checkbox" id="dstCheckbox" ${dstEnabled ? 'checked' : ''} onchange="toggleDST()"> 
-                            <span id="dstLabel">${translations[currentLang].dstLabel}</span>
+                            <span>${t.offsetInputLabel}</span>
+                            <input type="number" id="offsetInput" step="0.5" min="-12" max="14" value="${offsetHours}" onchange="updateOffset()" style="width:80px;" ${timeDisplayMode === 'offset' ? '' : 'disabled'}>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="dstCheckbox" ${dstEnabled ? 'checked' : ''} onchange="toggleDST()" ${timeDisplayMode === 'offset' ? '' : 'disabled'}> 
+                            <span>${t.dstLabel}</span>
                         </label>
                     </div>
                 </div>
+            `;
+
+            document.getElementById('info').innerHTML = `
+                <h2 id="infoTitle">${t.infoTitle}</h2>
+                ${timeOptionsHtml}
                 <div class="astro-grid">
                     <div class="astro-section sun-section">
-                        <div class="astro-header"><div class="sun-icon">☀️</div><h3 style="margin:0;color:#f59e0b;">${translations[currentLang].sunTitle}</h3></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].sunsetLabel}</span><span class="info-value">${formatTime(sunsetTime, currentLang)}</span></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].azimuthLabel}</span><span class="info-value">${formatNumber(sunAz)}°</span></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].altitudeLabel}</span><span class="info-value">${formatNumber(sunAlt)}°</span></div>
+                        <div class="astro-header"><div class="sun-icon">☀️</div><h3 style="margin:0;color:#f59e0b;">${t.sunTitle}</h3></div>
+                        <div class="astro-info-item"><span class="info-label">${t.sunsetLabel}</span><span class="info-value">${formatTime(sunsetTime, currentLang)}</span></div>
+                        <div class="astro-info-item"><span class="info-label">${t.azimuthLabel}</span><span class="info-value">${formatNumber(sunAz)}°</span></div>
+                        <div class="astro-info-item"><span class="info-label">${t.altitudeLabel}</span><span class="info-value">${formatNumber(sunAlt)}°</span></div>
                     </div>
                     <div class="astro-section moon-section">
-                        <div class="astro-header"><div class="moon-icon">🌙</div><h3 style="margin:0;color:#6b7280;">${translations[currentLang].moonTitle}</h3></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].moonsetLabel}</span><span class="info-value">${mt.set ? formatTime(mt.set, currentLang) : 'N/A'}</span></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].azimuthLabel}</span><span class="info-value">${formatNumber(moonAz)}°</span></div>
-                        <div class="astro-info-item"><span class="info-label">${translations[currentLang].altitudeLabel}</span><span class="info-value">${formatNumber(moonAlt)}°</span></div>
+                        <div class="astro-header"><div class="moon-icon">🌙</div><h3 style="margin:0;color:#6b7280;">${t.moonTitle}</h3></div>
+                        <div class="astro-info-item"><span class="info-label">${t.moonsetLabel}</span><span class="info-value">${mt.set ? formatTime(mt.set, currentLang) : 'N/A'}</span></div>
+                        <div class="astro-info-item"><span class="info-label">${t.azimuthLabel}</span><span class="info-value">${formatNumber(moonAz)}°</span></div>
+                        <div class="astro-info-item"><span class="info-label">${t.altitudeLabel}</span><span class="info-value">${formatNumber(moonAlt)}°</span></div>
                     </div>
                 </div>
                 <div class="visibility-section">
-                    <div class="visibility-header"><div class="visibility-icon">🔭</div><h3 style="margin:0;color:#2563eb;">${translations[currentLang].visibilityTitle}</h3></div>
-                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].stateLabel}</span><span class="info-value">${hidden}</span></div>
-                    <div class="astro-info-item"><span class="info-label">🌙 ${translations[currentLang].moonAgeLabel}</span><span class="info-value">${ageStr}</span></div>
-                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
-                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
-                    <div class="astro-info-item"><span class="info-label">${translations[currentLang].crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
+                    <div class="visibility-header"><div class="visibility-icon">🔭</div><h3 style="margin:0;color:#2563eb;">${t.visibilityTitle}</h3></div>
+                    <div class="astro-info-item"><span class="info-label">${t.stateLabel}</span><span class="info-value">${hidden}</span></div>
+                    <div class="astro-info-item"><span class="info-label">🌙 ${t.moonAgeLabel}</span><span class="info-value">${ageStr}</span></div>
+                    <div class="astro-info-item"><span class="info-label">${t.illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
+                    <div class="astro-info-item"><span class="info-label">${t.elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
+                    <div class="astro-info-item"><span class="info-label">${t.crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
                 </div>
             `;
 
@@ -1265,10 +1285,13 @@
             } catch (e) { console.error(e); }
         }
 
-        // ==================== Recherche de lieu ====================
+        // ==================== Recherche de lieu avec auto-complétion ====================
         async function searchLocation() {
             const term = document.getElementById('locationSearch').value.trim();
-            if (!term) return;
+            if (!term) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
             const loading = document.getElementById('searchLoading');
             const results = document.getElementById('searchResults');
             loading.style.display = 'block';
@@ -1301,6 +1324,11 @@
             }
         }
 
+        function handleSearchInput() {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchLocation, 300);
+        }
+
         // ==================== Langue et interface ====================
         function updateTexts() {
             const t = translations[currentLang];
@@ -1329,7 +1357,6 @@
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
             document.getElementById('searchLoading').textContent = t.searchLoading;
-            // Pas besoin de mettre à jour localTimeLabel etc ici car ils sont dans le HTML reconstruit
         }
 
         function updateLangSelector(lang) {
@@ -1383,13 +1410,28 @@
         // ==================== Options de temps ====================
         function changeTimeMode(mode) {
             timeDisplayMode = mode;
-            // On met à jour l'affichage du DST et on rafraîchit
-            if (isReady) updatePanorama();
+            updatePanorama(); // reconstruit le HTML avec les bons états disabled
+        }
+
+        function updateOffset() {
+            const input = document.getElementById('offsetInput');
+            if (input) {
+                let val = parseFloat(input.value);
+                if (isNaN(val)) val = 0;
+                if (val < -12) val = -12;
+                if (val > 14) val = 14;
+                offsetHours = val;
+                input.value = val; // pour refléter la correction
+            }
+            updatePanorama();
         }
 
         function toggleDST() {
-            dstEnabled = document.getElementById('dstCheckbox').checked;
-            if (isReady) updatePanorama();
+            const checkbox = document.getElementById('dstCheckbox');
+            if (checkbox) {
+                dstEnabled = checkbox.checked;
+            }
+            updatePanorama();
         }
 
         // ==================== PeakFinder ====================
@@ -1412,7 +1454,11 @@
             if (!dd.contains(e.target) && !btn.contains(e.target)) dd.classList.remove('show');
         });
 
+        // Auto-complétion sur input
+        document.getElementById('locationSearch').addEventListener('input', handleSearchInput);
+        // On garde aussi la touche Entrée pour compatibilité
         document.getElementById('locationSearch').addEventListener('keypress', e => { if (e.key === 'Enter') searchLocation(); });
+
         document.getElementById('lat').addEventListener('change', function() {
             const lat = parseFloat(this.value);
             if (isNaN(lat) || lat < -90 || lat > 90) showValidationError('lat', true, translations[currentLang].latError);
