@@ -41,7 +41,7 @@
         #pfcanvasprogress { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); z-index: 10; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .success { color: #16a34a; font-weight: 700; }
+        .success, .success1, .success2 { color: #16a34a; font-weight: 700; }
         .warning { color: #ca8a04; font-weight: 700; }
         .danger { color: #dc2626; font-weight: 700; }
         .info-list { list-style: none; padding: 0; }
@@ -420,27 +420,38 @@
             }
         }
 
+        /* Nouveau style pour les options de temps */
         .time-options {
             display: flex;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
             align-items: center;
             margin-bottom: 15px;
             padding: 10px;
             background: #f3f4f6;
             border-radius: 6px;
-            flex-wrap: wrap;
         }
-        .time-options label {
+        .time-options .offset-field {
             display: flex;
             align-items: center;
             gap: 5px;
-            font-weight: normal;
+        }
+        .time-options .offset-field label {
+            margin: 0;
+            font-weight: 600;
+        }
+        .time-options .offset-field input {
+            width: 80px;
             margin: 0;
         }
-        .time-options input:disabled {
-            background: #e5e7eb;
-            cursor: not-allowed;
-            opacity: 0.6;
+        .time-options .dst-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .time-options .dst-checkbox label {
+            margin: 0;
+            font-weight: normal;
         }
         
         .conjunction-block {
@@ -525,20 +536,32 @@
                 <div class="conjunction-block">
                     <div class="title" id="conjunctionTitle">Conjonction</div>
                     <div class="dates">
-                        <span><span id="prevConjLabel">←</span> <span id="prevConjDate">---</span></span>
-                        <span><span id="nextConjLabel">→</span> <span id="nextConjDate">---</span></span>
+                        <span><span id="prevConjLabel">Précédent</span> <span id="prevConjDate">---</span></span>
+                        <span><span id="nextConjLabel">Suivant</span> <span id="nextConjDate">---</span></span>
                     </div>
                 </div>
                 <label for="date" id="dateLabel">Date</label>
                 <input id="date" type="date">
+                
+                <!-- Options de temps simplifiées -->
+                <div class="time-options" id="timeOptions">
+                    <div class="offset-field">
+                        <label for="offsetInput">GMT +/-</label>
+                        <input type="number" id="offsetInput" step="0.5" min="-12" max="14" value="0" onchange="updateOffset()">
+                    </div>
+                    <div class="dst-checkbox">
+                        <input type="checkbox" id="dstCheckbox" onchange="toggleDST()">
+                        <label for="dstCheckbox" id="dstLabel">Heure d'été (DST)</label>
+                    </div>
+                </div>
+                
                 <label for="criterion" id="criterionLabel">Critère de visibilité</label>
                 <select id="criterion">
                     <option value="yallop">Yallop (Recommandé)</option>
                     <option value="saao">SAAO (Afrique du Sud)</option>
-                    <option value="odeh">Odeh (Précis)</option>
+                    <option value="odeh" selected>Odeh (Précis)</option>
                     <option value="danjon">Danjon (Élongation)</option>
                 </select>
-                <button class="primary" onclick="syncFromInputs()" id="updateBtn">Mettre à jour</button>
             </div>
         </div>
         
@@ -549,6 +572,8 @@
         
         <div class="card">
             <h2 id="panoramaTitle">5. Panorama du Relief</h2>
+            <!-- Bouton de mise à jour en haut -->
+            <button class="primary" onclick="updatePanorama()" id="updatePanoramaBtn" style="margin-bottom: 10px;">Mettre à jour le panorama</button>
             <div class="content">
                 <canvas id="pfcanvas"></canvas>
                 <div id="pfcanvasprogress">
@@ -611,7 +636,7 @@
             sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
         };
 
-        let timeDisplayMode = 'utc';
+        // Variables de temps
         let offsetHours = 0;
         let dstEnabled = false;
 
@@ -640,10 +665,10 @@
                     odeh: "Odeh (Précis)",
                     danjon: "Danjon (Élongation)"
                 },
-                updateBtn: "Mettre à jour",
                 infoTitle: "4. Informations Astronomiques",
                 loadingText: "Chargement des données...",
                 panoramaTitle: "5. Panorama du Relief",
+                updatePanoramaBtn: "Mettre à jour le panorama",
                 sunTitle: "Soleil",
                 moonTitle: "Lune",
                 sunsetLabel: "Coucher :",
@@ -696,16 +721,16 @@
                 latError: "La latitude doit être entre -90° et 90°",
                 lngError: "La longitude doit être entre -180° et 180°",
                 invalidPosition: "Position invalide",
-                utcLabel: "UTC (GMT)",
-                offsetLabel: "Décalage",
-                offsetInputLabel: "Décalage (heures) :",
                 dstLabel: "Heure d'été (DST)",
                 moonAgeLabel: "Âge de la Lune",
                 hour: "heure",
                 hours: "heures",
                 day: "jour",
                 days: "jours",
-                conjunctionTitle: "Conjonction"
+                conjunctionTitle: "Conjonction",
+                prevConjunction: "Précédent",
+                nextConjunction: "Suivant",
+                durationLabel: "Durée après coucher :"
             },
             en: {
                 pageTitle: "Lunar Crescent Observation (Hilal)",
@@ -730,10 +755,10 @@
                     odeh: "Odeh (Precise)",
                     danjon: "Danjon (Elongation)"
                 },
-                updateBtn: "Update",
                 infoTitle: "4. Astronomical Information",
                 loadingText: "Loading data...",
                 panoramaTitle: "5. Relief Panorama",
+                updatePanoramaBtn: "Update panorama",
                 sunTitle: "Sun",
                 moonTitle: "Moon",
                 sunsetLabel: "Sunset:",
@@ -786,16 +811,16 @@
                 latError: "Latitude must be between -90° and 90°",
                 lngError: "Longitude must be between -180° and 180°",
                 invalidPosition: "Invalid position",
-                utcLabel: "UTC (GMT)",
-                offsetLabel: "Offset",
-                offsetInputLabel: "Offset (hours):",
                 dstLabel: "Daylight Saving Time (DST)",
                 moonAgeLabel: "Moon Age",
                 hour: "hour",
                 hours: "hours",
                 day: "day",
                 days: "days",
-                conjunctionTitle: "Conjunction"
+                conjunctionTitle: "Conjunction",
+                prevConjunction: "Previous",
+                nextConjunction: "Next",
+                durationLabel: "Duration after sunset:"
             },
             ar: {
                 pageTitle: "رصد الهلال",
@@ -820,10 +845,10 @@
                     odeh: "عودة (دقيق)",
                     danjon: "دانجون (الاستطالة)"
                 },
-                updateBtn: "تحديث",
                 infoTitle: "٤. المعلومات الفلكية",
                 loadingText: "جاري تحميل البيانات...",
                 panoramaTitle: "٥. بانوراما التضاريس",
+                updatePanoramaBtn: "تحديث البانوراما",
                 sunTitle: "الشمس",
                 moonTitle: "القمر",
                 sunsetLabel: "غروب الشمس:",
@@ -876,16 +901,16 @@
                 latError: "يجب أن يكون خط العرض بين ٩٠° و ٩٠°-",
                 lngError: "يجب أن يكون خط الطول بين ١٨٠° و ١٨٠°-",
                 invalidPosition: "موقع غير صالح",
-                utcLabel: "UTC (GMT)",
-                offsetLabel: "توقيت يدوي",
-                offsetInputLabel: "التوقيت اليدوي (ساعات):",
                 dstLabel: "التوقيت الصيفي",
                 moonAgeLabel: "عمر القمر",
                 hour: "ساعة",
                 hours: "ساعات",
                 day: "يوم",
                 days: "أيام",
-                conjunctionTitle: "الاقتران"
+                conjunctionTitle: "الاقتران",
+                prevConjunction: "السابق",
+                nextConjunction: "القادم",
+                durationLabel: "المكث بعد الغروب :"
             }
         };
 
@@ -893,7 +918,8 @@
 
         // ==================== Fonctions de temps ====================
         function getDisplayOffsetMinutes() {
-            if (timeDisplayMode === 'utc') return 0;
+            // Si offset est 0 et DST non coché, on est en UTC
+            if (offsetHours === 0 && !dstEnabled) return 0;
             let offset = offsetHours * 60;
             if (dstEnabled) offset += 60;
             return offset;
@@ -904,12 +930,13 @@
             return new Date(date.getTime() + offsetMinutes * 60 * 1000);
         }
 
-        function formatTime(date, lang, mode = timeDisplayMode) {
+        function formatTime(date, lang, mode) {
             if (!date) return 'N/A';
             
             let displayDate;
-            if (mode === 'utc') {
-                displayDate = date;
+            const offsetMinutes = getDisplayOffsetMinutes();
+            if (offsetMinutes === 0) {
+                displayDate = date; // UTC
             } else {
                 displayDate = utcToLocalTime(date);
             }
@@ -926,10 +953,10 @@
             return convertIndianToArabicNumbers(timeString);
         }
 
-        function formatDateTime(date, lang, mode = 'utc') {
+        function formatDateTime(date, lang) {
             if (!date) return 'N/A';
             const datePart = date.toISOString().slice(0,10);
-            const timePart = formatTime(date, lang, mode);
+            const timePart = formatTime(date, lang);
             return `${datePart} ${timePart}`;
         }
 
@@ -1048,7 +1075,7 @@
             map.panTo([lat, lng]);
             await fetchLocationName(lat, lng);
             await fetchElevation(lat, lng);
-            updatePanorama();
+            updateInfo(); // met à jour les infos, pas le panorama
         }
 
         function syncFromInputs() {
@@ -1234,7 +1261,8 @@
             const { prev, next } = getConjunctionDates();
             const t = translations[currentLang];
             document.getElementById('conjunctionTitle').textContent = t.conjunctionTitle;
-            // Les libellés des flèches sont fixes, on ne les change pas
+            document.getElementById('prevConjLabel').textContent = t.prevConjunction;
+            document.getElementById('nextConjLabel').textContent = t.nextConjunction;
             if (prev) {
                 document.getElementById('prevConjDate').textContent = prev.toISOString().slice(0,10);
             } else {
@@ -1247,13 +1275,24 @@
             }
         }
 
-        // ==================== Mise à jour du panorama et des infos ====================
-        function updatePanorama() {
-            if (!isReady) return;
+        // ==================== Fonction pour formater la durée ====================
+        function formatDuration(minutes) {
+            if (minutes < 0) return "0";
+            const hours = Math.floor(minutes / 60);
+            const mins = Math.floor(minutes % 60);
+            if (hours > 0) {
+                return `${hours}h ${mins}min`;
+            } else {
+                return `${mins} min`;
+            }
+        }
+
+        // ==================== Mise à jour des informations (carte 4) ====================
+        function updateInfo() {
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
-            const ele = parseInt(document.getElementById('ele').value) || 0;
             const dateStr = document.getElementById('date').value;
+            if (!isValidCoordinates(lat, lng)) return;
             let d;
             if (dateStr) {
                 const [y, m, day] = dateStr.split('-').map(Number);
@@ -1261,7 +1300,6 @@
             } else {
                 d = new Date();
             }
-            if (!isValidCoordinates(lat, lng)) return;
 
             const st = SunCalc.getTimes(d, lat, lng);
             const mt = SunCalc.getMoonTimes(d, lat, lng);
@@ -1279,35 +1317,20 @@
             const ageStr = getMoonAgeString(illum.phase, currentLang);
             const t = translations[currentLang];
 
-            const timeOptionsHtml = `
-                <div class="time-options">
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <span style="font-weight: 600;">⏰</span>
-                        <label>
-                            <input type="radio" name="timeMode" value="utc" ${timeDisplayMode === 'utc' ? 'checked' : ''} onchange="changeTimeMode('utc')"> 
-                            <span>${t.utcLabel}</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="timeMode" value="offset" ${timeDisplayMode === 'offset' ? 'checked' : ''} onchange="changeTimeMode('offset')"> 
-                            <span>${t.offsetLabel}</span>
-                        </label>
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;" id="offsetControls">
-                        <label>
-                            <span>${t.offsetInputLabel}</span>
-                            <input type="number" id="offsetInput" step="0.5" min="-12" max="14" value="${offsetHours}" onchange="updateOffset()" style="width:80px;" ${timeDisplayMode === 'offset' ? '' : 'disabled'}>
-                        </label>
-                        <label>
-                            <input type="checkbox" id="dstCheckbox" ${dstEnabled ? 'checked' : ''} onchange="toggleDST()" ${timeDisplayMode === 'offset' ? '' : 'disabled'}> 
-                            <span>${t.dstLabel}</span>
-                        </label>
-                    </div>
-                </div>
-            `;
+            // Calcul de la durée après coucher
+            let durationStr = 'N/A';
+            if (mt.set && sunsetTime) {
+                const diffMs = mt.set - sunsetTime; // en millisecondes
+                if (diffMs > 0) {
+                    const diffMinutes = diffMs / (60 * 1000);
+                    durationStr = formatDuration(diffMinutes);
+                } else {
+                    durationStr = '0';
+                }
+            }
 
             document.getElementById('info').innerHTML = `
                 <h2 id="infoTitle">${t.infoTitle}</h2>
-                ${timeOptionsHtml}
                 <div class="astro-grid">
                     <div class="astro-section sun-section">
                         <div class="astro-header"><div class="sun-icon">☀️</div><h3 style="margin:0;color:#f59e0b;">${t.sunTitle}</h3></div>
@@ -1325,14 +1348,36 @@
                 <div class="visibility-section">
                     <div class="visibility-header"><div class="visibility-icon">🔭</div><h3 style="margin:0;color:#2563eb;">${t.visibilityTitle}</h3></div>
                     <div class="astro-info-item"><span class="info-label">${t.stateLabel}</span><span class="info-value">${hidden}</span></div>
+                    <div class="astro-info-item"><span class="info-label">${t.moonAgeLabel}</span><span class="info-value">${ageStr}</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
+                    <div class="astro-info-item"><span class="info-label">${t.durationLabel}</span><span class="info-value">${durationStr}</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
                 </div>
             `;
 
             updateConjunctionInfo();
+        }
 
+        // ==================== Mise à jour du panorama ====================
+        function updatePanorama() {
+            if (!isReady) return;
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            const ele = parseInt(document.getElementById('ele').value) || 0;
+            const dateStr = document.getElementById('date').value;
+            if (!isValidCoordinates(lat, lng)) return;
+            let d;
+            if (dateStr) {
+                const [y, m, day] = dateStr.split('-').map(Number);
+                d = new Date(Date.UTC(y, m-1, day, 12, 0, 0));
+            } else {
+                d = new Date();
+            }
+            const st = SunCalc.getTimes(d, lat, lng);
+            const sunsetTime = st.sunset;
+            const moon = SunCalc.getMoonPosition(sunsetTime, lat, lng);
+            
             try {
                 panel.loadViewpoint(lat, lng, "Observation");
                 panel.elevationOffset(ele);
@@ -1342,6 +1387,28 @@
                 panel.fieldofview(60);
                 if (panel.redraw) panel.redraw();
             } catch (e) { console.error(e); }
+        }
+
+        // ==================== Gestion des options de temps ====================
+        function updateOffset() {
+            const input = document.getElementById('offsetInput');
+            if (input) {
+                let val = parseFloat(input.value);
+                if (isNaN(val)) val = 0;
+                if (val < -12) val = -12;
+                if (val > 14) val = 14;
+                offsetHours = val;
+                input.value = val;
+            }
+            updateInfo();
+        }
+
+        function toggleDST() {
+            const checkbox = document.getElementById('dstCheckbox');
+            if (checkbox) {
+                dstEnabled = checkbox.checked;
+            }
+            updateInfo();
         }
 
         // ==================== Recherche de lieu ====================
@@ -1410,12 +1477,17 @@
             for (let opt of sel.options) {
                 if (t.criterionOptions[opt.value]) opt.textContent = t.criterionOptions[opt.value];
             }
-            document.getElementById('updateBtn').textContent = t.updateBtn;
             document.getElementById('infoTitle').textContent = t.infoTitle;
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
+            document.getElementById('updatePanoramaBtn').textContent = t.updatePanoramaBtn;
             document.getElementById('searchLoading').textContent = t.searchLoading;
+            
+            // Mise à jour des labels de temps (sauf GMT+/- qui est fixe)
+            document.getElementById('dstLabel').textContent = t.dstLabel;
+            
             updateConjunctionInfo();
+            // Les infos sont mises à jour par updateInfo() appelé ailleurs
         }
 
         function updateLangSelector(lang) {
@@ -1441,7 +1513,7 @@
             document.querySelectorAll('.author-signature p:last-child span[lang]').forEach(s => s.style.display = 'none');
             const proj = document.querySelector(`.author-signature p:last-child span[lang="${lang}"]`);
             if (proj) proj.style.display = 'inline';
-            if (isReady) updatePanorama();
+            if (isReady) updateInfo(); // on met à jour les infos, pas le panorama
             localStorage.setItem('hilal-lang-preference', lang);
         }
 
@@ -1464,41 +1536,15 @@
             `;
         }
 
-        function changeTimeMode(mode) {
-            timeDisplayMode = mode;
-            updatePanorama();
-        }
-
-        function updateOffset() {
-            const input = document.getElementById('offsetInput');
-            if (input) {
-                let val = parseFloat(input.value);
-                if (isNaN(val)) val = 0;
-                if (val < -12) val = -12;
-                if (val > 14) val = 14;
-                offsetHours = val;
-                input.value = val;
-            }
-            updatePanorama();
-        }
-
-        function toggleDST() {
-            const checkbox = document.getElementById('dstCheckbox');
-            if (checkbox) {
-                dstEnabled = checkbox.checked;
-            }
-            updatePanorama();
-        }
-
         function initPeakFinder() {
-            panel = new PeakFinder.PanoramaPanel({ canvasid: "pfcanvas", locale: "fr" });
+            panel = new PeakFinder.PanoramaPanel({ canvasid: "pfcanvas", locale: "en" });
             panel.init(() => {
                 isReady = true;
                 panel.settings.showSun(1);
                 panel.settings.showMoon(1);
                 panel.settings.showGrid(1);
                 document.getElementById('pfcanvasprogress').style.display = 'none';
-                updatePanorama();
+                // On ne lance pas le panorama automatiquement
             });
         }
 
@@ -1522,6 +1568,10 @@
             else { showValidationError('lng', false); fetchLocationName(parseFloat(document.getElementById('lat').value), lng); }
         });
 
+        // Mise à jour automatique des infos lors du changement de date ou de critère
+        document.getElementById('date').addEventListener('change', updateInfo);
+        document.getElementById('criterion').addEventListener('change', updateInfo);
+
         window.onload = async () => {
             document.getElementById('date').valueAsDate = new Date();
             initMap();
@@ -1532,6 +1582,7 @@
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
             await fetchLocationName(lat, lng);
+            updateInfo(); // affichage initial
             updateConjunctionInfo();
         };
     </script>
