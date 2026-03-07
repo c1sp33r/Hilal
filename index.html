@@ -93,14 +93,16 @@
             gap: 8px;
             margin-bottom: 12px;
         }
-        .location-name-input {
+        #locationName {
             flex: 1;
             padding: 10px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             background: #f9fafb;
             color: #374151;
+            font-weight: 700;
             font-style: italic;
+            display: block;
         }
         
         .astro-grid {
@@ -193,10 +195,7 @@
         }
         
         .language-selector {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
+            /* plus besoin de margin auto */
         }
         
         .lang-dropdown {
@@ -204,6 +203,7 @@
             border: 1px solid #d1d5db;
             border-radius: 6px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
         }
         
         .lang-dropdown-btn {
@@ -236,6 +236,7 @@
             border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             margin-top: 5px;
+            z-index: 1000;
         }
         
         .lang-dropdown-content.show {
@@ -354,13 +355,21 @@
         }
         
         .page-header {
-            text-align: center;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
             margin-bottom: 30px;
-            position: relative;
         }
         
         .page-header h1 {
             margin: 0;
+            text-align: center;
+            grid-column: 2;
+        }
+        
+        .language-selector {
+            grid-column: 3;
+            justify-self: end;
         }
         
         .error-message {
@@ -433,69 +442,74 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+        
+        .conjunction-block {
+            margin-bottom:15px; 
+            padding:10px; 
+            background:#f3f4f6; 
+            border-radius:6px; 
+            text-align:center;
+        }
+        .conjunction-block .title {
+            font-weight:700; 
+            margin-bottom:5px;
+        }
+        .conjunction-block .dates {
+            display:flex; 
+            justify-content:space-between;
+        }
     </style>
 </head>
 <body>
-    <!-- Sélecteur de langue -->
-    <div class="language-selector">
-        <div class="lang-dropdown">
-            <button class="lang-dropdown-btn" onclick="toggleLangDropdown()">
-                <span class="lang-flag" id="currentLangFlag">🇫🇷</span>
-                <span id="currentLangText">Français</span>
-                <span style="font-size: 12px;">▼</span>
-            </button>
-            <div class="lang-dropdown-content" id="langDropdown">
-                <div class="lang-option active" onclick="changeLanguage('fr')">
-                    <span class="lang-flag">🇫🇷</span>
-                    <span>Français</span>
-                </div>
-                <div class="lang-option" onclick="changeLanguage('en')">
-                    <span class="lang-flag">🇬🇧</span>
-                    <span>English</span>
-                </div>
-                <div class="lang-option" onclick="changeLanguage('ar')">
-                    <span class="lang-flag">🇸🇦</span>
-                    <span>عربي</span>
+    <div class="container">
+        <div class="page-header">
+            <h1 id="pageTitle">Observation du Croissant Lunaire (Hilal)</h1>
+            <div class="language-selector">
+                <div class="lang-dropdown">
+                    <button class="lang-dropdown-btn" onclick="toggleLangDropdown()">
+                        <span class="lang-flag" id="currentLangFlag">🇫🇷</span>
+                        <span id="currentLangText">Français</span>
+                        <span style="font-size: 12px;">▼</span>
+                    </button>
+                    <div class="lang-dropdown-content" id="langDropdown">
+                        <div class="lang-option active" onclick="changeLanguage('fr')">
+                            <span class="lang-flag">🇫🇷</span>
+                            <span>Français</span>
+                        </div>
+                        <div class="lang-option" onclick="changeLanguage('en')">
+                            <span class="lang-flag">🇬🇧</span>
+                            <span>English</span>
+                        </div>
+                        <div class="lang-option" onclick="changeLanguage('ar')">
+                            <span class="lang-flag">🇸🇦</span>
+                            <span>عربي</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="container">
-        <!-- En-tête avec titre centré -->
-        <div class="page-header">
-            <h1 id="pageTitle">Observation du Croissant Lunaire (Hilal)</h1>
-        </div>
         
         <div class="grid-3">
-            <!-- Première carte : Position -->
             <div class="card">
                 <h2 id="positionTitle">1. Position</h2>
-                
                 <label for="locationSearch" id="searchLabel">Rechercher un lieu :</label>
                 <input type="text" id="locationSearch" placeholder="Ex: Paris, France" autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
                 <div id="searchLoading" class="search-loading">Recherche en cours...</div>
-                
                 <button class="location-btn" onclick="getUserLocation()" id="locationBtn">📍 Ma Position Actuelle</button>
-                
                 <div class="location-name-container">
-                    <input type="text" id="locationName" class="location-name-input" placeholder="Nom du lieu (sera rempli automatiquement)" readonly>
+                    <span id="locationName" class="location-name-input">Algérie</span>
                 </div>
-                
                 <label for="lat" id="latLabel">Latitude</label>
                 <input id="lat" type="number" step="0.000001" value="36.20534" min="-90" max="90">
                 <div id="latError" class="error-message">La latitude doit être entre -90° et 90°</div>
-                
                 <label for="lng" id="lngLabel">Longitude</label>
                 <input id="lng" type="number" step="0.000001" value="5.41173" min="-180" max="180">
                 <div id="lngError" class="error-message">La longitude doit être entre -180° et 180°</div>
-                
                 <label for="ele" id="eleLabel">Altitude (m)</label>
                 <input id="ele" type="number" value="0">
             </div>
             
-            <!-- Deuxième carte : Carte Interactive -->
             <div class="card">
                 <h2 id="mapTitle">2. Carte Interactive</h2>
                 <div class="btn-group" id="mapButtons">
@@ -506,9 +520,15 @@
                 <div id="map"></div>
             </div>
             
-            <!-- Troisième carte : Date et Critère de Visibilité -->
             <div class="card">
                 <h2 id="dateTitle">3. Date et Critère de Visibilité</h2>
+                <div class="conjunction-block">
+                    <div class="title" id="conjunctionTitle">Conjonction</div>
+                    <div class="dates">
+                        <span><span id="prevConjLabel">←</span> <span id="prevConjDate">---</span></span>
+                        <span><span id="nextConjLabel">→</span> <span id="nextConjDate">---</span></span>
+                    </div>
+                </div>
                 <label for="date" id="dateLabel">Date</label>
                 <input id="date" type="date">
                 <label for="criterion" id="criterionLabel">Critère de visibilité</label>
@@ -522,13 +542,11 @@
             </div>
         </div>
         
-        <!-- Quatrième carte : Informations Astronomiques (le contenu sera généré dynamiquement) -->
         <div class="card" id="info">
             <h2 id="infoTitle">4. Informations Astronomiques</h2>
             <p id="loadingText">Chargement des données...</p>
         </div>
         
-        <!-- Cinquième carte : Panorama -->
         <div class="card">
             <h2 id="panoramaTitle">5. Panorama du Relief</h2>
             <div class="content">
@@ -539,37 +557,20 @@
             </div>
         </div>
         
-        <!-- Note d'utilisation -->
         <div class="usage-note" id="usageNote"></div>
         
-        <!-- Signature de l'auteur en 3 langues -->
         <div class="author-signature">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: center;">
-                <!-- Français -->
                 <div style="font-family: 'system-ui', sans-serif;">
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 Designer:</span>
+                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">Webdesigner:</span>
                         <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-left: 8px;">Drif Ilyes</span>
                     </div>
                     <div style="font-size: 0.9em; color: #4b5563;">
-                        <span style="font-weight: 600;">📧 Email:</span>
+                        <span style="font-weight: 600;">Email:</span>
                         <a href="mailto:Drif7777@gmail.com" style="color: #2563eb; text-decoration: none; margin-left: 5px;">Drif7777@gmail.com</a>
                     </div>
                 </div>
-                
-                <!-- Arabe -->
-                <div style="font-family: 'system-ui', sans-serif; text-align: center;" dir="rtl">
-                    <div style="margin-bottom: 8px;">
-                        <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">👨‍💻 المصمم:</span>
-                        <span style="font-size: 1.2em; color: #1f2937; font-weight: 600; margin-right: 8px;">ظريف إلياس</span>
-                    </div>
-                    <div style="font-size: 0.9em; color: #4b5563;">
-                        <span style="font-weight: 600;">📧 البريد الإلكتروني:</span>
-                        <a href="mailto:Drif7777@gmail.com" style="color: #2563eb; text-decoration: none; margin-right: 5px;">Drif7777@gmail.com</a>
-                    </div>
-                </div>
-                
-                <!-- Version -->
                 <div style="font-family: 'system-ui', sans-serif; text-align: right;">
                     <div style="margin-bottom: 8px;">
                         <span style="font-size: 1.2em; color: #2563eb; font-weight: 600;">📌 Version:</span>
@@ -581,8 +582,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Ligne décorative et copyright -->
             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(37, 99, 235, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
                 <p style="margin: 0; color: #6b7280; font-size: 0.9em;">
                     <span>© 2026 - </span>
@@ -603,19 +602,18 @@
     <script>
         // ==================== Variables globales ====================
         let map, marker, panel, isReady = false;
-        let searchTimeout = null; // pour le debounce de la recherche
+        let searchTimeout = null;
         const MOON_RADIUS_KM = 1737.4;
-        const SYNODIC_MONTH_DAYS = 29.530588; // Mois lunaire moyen
+        const SYNODIC_MONTH_DAYS = 29.530588;
         const layers = {
             osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
             relief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'),
             sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
         };
 
-        // Paramètres d'affichage du temps
-        let timeDisplayMode = 'utc'; // 'utc' ou 'offset'
-        let offsetHours = 0; // décalage manuel en heures (pour le mode offset)
-        let dstEnabled = false; // Heure d'été (appliqué seulement au mode offset)
+        let timeDisplayMode = 'utc';
+        let offsetHours = 0;
+        let dstEnabled = false;
 
         // ==================== Traductions ====================
         const translations = {
@@ -706,7 +704,8 @@
                 hour: "heure",
                 hours: "heures",
                 day: "jour",
-                days: "jours"
+                days: "jours",
+                conjunctionTitle: "Conjonction"
             },
             en: {
                 pageTitle: "Lunar Crescent Observation (Hilal)",
@@ -795,7 +794,8 @@
                 hour: "hour",
                 hours: "hours",
                 day: "day",
-                days: "days"
+                days: "days",
+                conjunctionTitle: "Conjunction"
             },
             ar: {
                 pageTitle: "رصد الهلال",
@@ -884,7 +884,8 @@
                 hour: "ساعة",
                 hours: "ساعات",
                 day: "يوم",
-                days: "أيام"
+                days: "أيام",
+                conjunctionTitle: "الاقتران"
             }
         };
 
@@ -908,12 +909,11 @@
             
             let displayDate;
             if (mode === 'utc') {
-                displayDate = date; // UTC
+                displayDate = date;
             } else {
                 displayDate = utcToLocalTime(date);
             }
             
-            // Pour éviter les décalages, on affiche en UTC après conversion manuelle
             const options = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' };
             let timeString;
             try {
@@ -926,7 +926,13 @@
             return convertIndianToArabicNumbers(timeString);
         }
 
-        // ==================== Âge de la Lune ====================
+        function formatDateTime(date, lang, mode = 'utc') {
+            if (!date) return 'N/A';
+            const datePart = date.toISOString().slice(0,10);
+            const timePart = formatTime(date, lang, mode);
+            return `${datePart} ${timePart}`;
+        }
+
         function getMoonAgeString(phase, lang) {
             const ageDays = phase * SYNODIC_MONTH_DAYS;
             const t = translations[lang];
@@ -1001,7 +1007,7 @@
 
         async function fetchLocationName(lat, lng) {
             if (isNaN(lat) || isNaN(lng)) {
-                document.getElementById('locationName').value = translations[currentLang].invalidPosition;
+                document.getElementById('locationName').textContent = translations[currentLang].invalidPosition;
                 return;
             }
             try {
@@ -1020,16 +1026,16 @@
                 } else {
                     placeName = data.display_name.split(',').slice(0,2).join(',');
                 }
-                document.getElementById('locationName').value = convertIndianToArabicNumbers(placeName);
+                document.getElementById('locationName').textContent = convertIndianToArabicNumbers(placeName);
             } catch {
-                document.getElementById('locationName').value = `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+                document.getElementById('locationName').textContent = `Position: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
             }
         }
 
         async function setPosition(lat, lng) {
             if (!isValidCoordinates(lat, lng)) {
                 const t = translations[currentLang];
-                document.getElementById('locationName').value = t.invalidPosition;
+                document.getElementById('locationName').textContent = t.invalidPosition;
                 showValidationError('lat', true, t.latError);
                 showValidationError('lng', true, t.lngError);
                 return;
@@ -1059,7 +1065,7 @@
 
         function getUserLocation() {
             if (!navigator.geolocation) {
-                alert(translations[currentLang].latError); // simplifié
+                alert(translations[currentLang].latError);
                 return;
             }
             const btn = document.querySelector('.location-btn');
@@ -1187,6 +1193,60 @@
             return translations[currentLang].aboveHorizon;
         }
 
+        // ==================== Calcul précis des conjonctions ====================
+        function findNewMoonDate(approxDate, direction) {
+            const oneDay = 24*3600*1000;
+            const start = new Date(approxDate.getTime() - 2*oneDay);
+            start.setUTCHours(12,0,0,0);
+            let bestDate = null;
+            let bestDist = 1;
+            for (let i = 0; i <= 4; i++) {
+                const d = new Date(start.getTime() + i*oneDay);
+                const illum = SunCalc.getMoonIllumination(d);
+                let phase = illum.phase;
+                const dist = Math.min(phase, 1 - phase);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestDate = d;
+                }
+            }
+            return bestDate || approxDate;
+        }
+
+        function getConjunctionDates() {
+            const dateStr = document.getElementById('date').value;
+            if (!dateStr) return { prev: null, next: null };
+            const [y, m, day] = dateStr.split('-').map(Number);
+            const noon = new Date(Date.UTC(y, m-1, day, 12, 0, 0));
+            const illum = SunCalc.getMoonIllumination(noon);
+            const phase = illum.phase;
+            const synodic = SYNODIC_MONTH_DAYS;
+            const prevApprox = new Date(noon.getTime() - phase * synodic * 24*3600*1000);
+            const nextApprox = new Date(noon.getTime() + (1-phase) * synodic * 24*3600*1000);
+            
+            const prev = findNewMoonDate(prevApprox, 'prev');
+            const next = findNewMoonDate(nextApprox, 'next');
+            
+            return { prev, next };
+        }
+
+        function updateConjunctionInfo() {
+            const { prev, next } = getConjunctionDates();
+            const t = translations[currentLang];
+            document.getElementById('conjunctionTitle').textContent = t.conjunctionTitle;
+            // Les libellés des flèches sont fixes, on ne les change pas
+            if (prev) {
+                document.getElementById('prevConjDate').textContent = prev.toISOString().slice(0,10);
+            } else {
+                document.getElementById('prevConjDate').textContent = '---';
+            }
+            if (next) {
+                document.getElementById('nextConjDate').textContent = next.toISOString().slice(0,10);
+            } else {
+                document.getElementById('nextConjDate').textContent = '---';
+            }
+        }
+
         // ==================== Mise à jour du panorama et des infos ====================
         function updatePanorama() {
             if (!isReady) return;
@@ -1219,7 +1279,6 @@
             const ageStr = getMoonAgeString(illum.phase, currentLang);
             const t = translations[currentLang];
 
-            // Construction complète du HTML de #info avec les options de temps
             const timeOptionsHtml = `
                 <div class="time-options">
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -1266,14 +1325,14 @@
                 <div class="visibility-section">
                     <div class="visibility-header"><div class="visibility-icon">🔭</div><h3 style="margin:0;color:#2563eb;">${t.visibilityTitle}</h3></div>
                     <div class="astro-info-item"><span class="info-label">${t.stateLabel}</span><span class="info-value">${hidden}</span></div>
-                    <div class="astro-info-item"><span class="info-label">🌙 ${t.moonAgeLabel}</span><span class="info-value">${ageStr}</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.illuminationLabel}</span><span class="info-value">${formatNumber(illum.fraction*100)}%</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.elongationLabel}</span><span class="info-value">${formatNumber(elong(sun, moon))}°</span></div>
                     <div class="astro-info-item"><span class="info-label">${t.crescentLabel}</span><span class="info-value"><span class="${cresCls}">${cresTxt}</span></span></div>
                 </div>
             `;
 
-            // PeakFinder
+            updateConjunctionInfo();
+
             try {
                 panel.loadViewpoint(lat, lng, "Observation");
                 panel.elevationOffset(ele);
@@ -1285,7 +1344,7 @@
             } catch (e) { console.error(e); }
         }
 
-        // ==================== Recherche de lieu avec auto-complétion ====================
+        // ==================== Recherche de lieu ====================
         async function searchLocation() {
             const term = document.getElementById('locationSearch').value.trim();
             if (!term) {
@@ -1337,7 +1396,6 @@
             document.getElementById('searchLabel').textContent = t.searchLabel;
             document.getElementById('locationSearch').placeholder = t.searchPlaceholder;
             document.getElementById('locationBtn').textContent = t.locationBtn;
-            document.getElementById('locationName').placeholder = t.locationPlaceholder;
             document.getElementById('latLabel').textContent = t.latLabel;
             document.getElementById('lngLabel').textContent = t.lngLabel;
             document.getElementById('eleLabel').textContent = t.eleLabel;
@@ -1357,6 +1415,7 @@
             document.getElementById('loadingText').textContent = t.loadingText;
             document.getElementById('panoramaTitle').textContent = t.panoramaTitle;
             document.getElementById('searchLoading').textContent = t.searchLoading;
+            updateConjunctionInfo();
         }
 
         function updateLangSelector(lang) {
@@ -1376,7 +1435,6 @@
             updateTexts();
             updateUsageSection();
             updateLangSelector(lang);
-            // Gestion du copyright
             document.querySelectorAll('.author-signature p:first-child span[lang]').forEach(s => s.style.display = 'none');
             const cp = document.querySelector(`.author-signature p:first-child span[lang="${lang}"]`);
             if (cp) cp.style.display = 'inline';
@@ -1391,7 +1449,6 @@
             document.getElementById('langDropdown').classList.toggle('show');
         }
 
-        // ==================== Section d'utilisation ====================
         function updateUsageSection() {
             const t = translations[currentLang];
             const tip = currentLang === 'en' ? 'Tip:' : currentLang === 'ar' ? 'نصيحة:' : 'Astuce :';
@@ -1407,10 +1464,9 @@
             `;
         }
 
-        // ==================== Options de temps ====================
         function changeTimeMode(mode) {
             timeDisplayMode = mode;
-            updatePanorama(); // reconstruit le HTML avec les bons états disabled
+            updatePanorama();
         }
 
         function updateOffset() {
@@ -1421,7 +1477,7 @@
                 if (val < -12) val = -12;
                 if (val > 14) val = 14;
                 offsetHours = val;
-                input.value = val; // pour refléter la correction
+                input.value = val;
             }
             updatePanorama();
         }
@@ -1434,7 +1490,6 @@
             updatePanorama();
         }
 
-        // ==================== PeakFinder ====================
         function initPeakFinder() {
             panel = new PeakFinder.PanoramaPanel({ canvasid: "pfcanvas", locale: "fr" });
             panel.init(() => {
@@ -1447,16 +1502,13 @@
             });
         }
 
-        // ==================== Event listeners ====================
         document.addEventListener('click', function(e) {
             const dd = document.getElementById('langDropdown');
             const btn = document.querySelector('.lang-dropdown-btn');
             if (!dd.contains(e.target) && !btn.contains(e.target)) dd.classList.remove('show');
         });
 
-        // Auto-complétion sur input
         document.getElementById('locationSearch').addEventListener('input', handleSearchInput);
-        // On garde aussi la touche Entrée pour compatibilité
         document.getElementById('locationSearch').addEventListener('keypress', e => { if (e.key === 'Enter') searchLocation(); });
 
         document.getElementById('lat').addEventListener('change', function() {
@@ -1480,6 +1532,7 @@
             const lat = parseFloat(document.getElementById('lat').value);
             const lng = parseFloat(document.getElementById('lng').value);
             await fetchLocationName(lat, lng);
+            updateConjunctionInfo();
         };
     </script>
 </body>
